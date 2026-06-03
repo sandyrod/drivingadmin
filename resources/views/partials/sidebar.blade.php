@@ -31,6 +31,20 @@
                     'label' => 'Inscripción Alumno'
                 ],
                 [
+                    'id' => 'registro-instructor',
+                    'route' => 'registro-instructor',
+                    'path' => 'registro-instructor',
+                    'icon' => 'fa-solid fa-user-tie',
+                    'label' => 'Registrar Instructor'
+                ],
+                [
+                    'id' => 'registro-vehiculo',
+                    'route' => 'registro-vehiculo',
+                    'path' => 'registro-vehiculo',
+                    'icon' => 'fa-solid fa-car',
+                    'label' => 'Registrar Vehículo'
+                ],
+                [
                     'id' => 'encuesta',
                     'route' => 'encuesta',
                     'path' => 'encuesta',

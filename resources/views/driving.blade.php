@@ -92,8 +92,8 @@
     <!-- ================= PANELS: REGISTRO/INSCRIPCION ================= -->
     <div id="view-inscripcion" class="hidden max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
         <div class="p-8 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
-            <h3 class="text-lg font-bold text-slate-100">Ficha de Inscripción Digital</h3>
-            <p class="text-xs text-slate-400 mt-1">Crea nuevos expedientes que se sincronizarán directamente con la base de datos.</p>
+            <h3 class="text-lg font-bold text-slate-100" id="student-form-title">Ficha de Inscripción Digital</h3>
+            <p class="text-xs text-slate-400 mt-1" id="student-form-subtitle">Crea nuevos expedientes que se sincronizarán directamente con la base de datos.</p>
         </div>
 
         <form id="student-form" class="p-8 space-y-6" onsubmit="handleStudentSubmit(event)">
@@ -297,8 +297,248 @@
 
             <div class="border-t border-slate-800/60 pt-6 flex justify-end gap-3">
                 <button type="reset" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-slate-800 hover:bg-slate-800 transition">Reiniciar Formulario</button>
-                <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-save"></i> Registrar Alumno
+                <button type="submit" id="student-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-save" id="student-submit-btn-icon"></i> <span id="student-submit-btn-text">Registrar Alumno</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ================= PANELS: REGISTRO INSTRUCTOR ================= -->
+    <div id="view-registro-instructor" class="hidden max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-8 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
+            <h3 class="text-lg font-bold text-slate-100" id="instructor-form-title">Ficha de Registro de Instructor</h3>
+            <p class="text-xs text-slate-400 mt-1" id="instructor-form-subtitle">Crea nuevos expedientes de instructores que se sincronizarán directamente con la base de datos.</p>
+        </div>
+
+        <form id="instructor-form" class="p-8 space-y-6" onsubmit="handleInstructorSubmit(event)">
+            <!-- 1. Datos Personales -->
+            <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Instructor</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Primer Nombre <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-first-name" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Luis">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Segundo Nombre</label>
+                    <input type="text" id="ins-middle-name"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Felipe">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-last-name" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Rodríguez">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha de Nacimiento <span class="text-amber-500">*</span></label>
+                    <input type="date" id="ins-birth-date" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Género <span class="text-amber-500">*</span></label>
+                    <select id="ins-gender" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="O">Otro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico <span class="text-amber-500">*</span></label>
+                    <input type="email" id="ins-email" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="ejemplo@correo.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Teléfono de Contacto <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-phone" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. +1 914-555-7788">
+                </div>
+            </div>
+
+            <!-- 2. Ubicación -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dirección de Residencia <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-address" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. 123 Main St">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ciudad <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-city" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Queens">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Estado <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-state" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        value="NY" placeholder="Ej. NY">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Cód. Postal <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-zip-code" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. 11101">
+                </div>
+            </div>
+
+            <!-- 3. Características DMV Físicas -->
+            <div class="border-t border-slate-800/60 pt-6">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Detalles DMV Físicos (Opcional)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Estatura</label>
+                        <input type="text" id="ins-height"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                            placeholder="Ej. 5'11&quot; o 1.80m">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Color de Ojos</label>
+                        <select id="ins-eye-color"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="">Selecciona...</option>
+                            <option value="BLU">Azul (BLU)</option>
+                            <option value="BRN">Marrón (BRN)</option>
+                            <option value="GRN">Verde (GRN)</option>
+                            <option value="HAZ">Avellana (HAZ)</option>
+                            <option value="GRY">Gris (GRY)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center h-full pt-6">
+                        <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 w-full">
+                            <input type="checkbox" id="ins-organ-donor" value="1" class="accent-amber-500">
+                            <span class="text-sm">¿Donante de Órganos?</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Licencia de Instructor NY DMV -->
+            <div class="border-t border-slate-800/60 pt-6">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Licencia de Instructor NY DMV (Opcional)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nº de Documento (License)</label>
+                        <input type="text" id="ins-lic-number"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                            placeholder="Ej. INS-LIC-001">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha de Expiración</label>
+                        <input type="date" id="ins-lic-expiration"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Clase de Documento</label>
+                        <select id="ins-lic-class"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="">Selecciona clase...</option>
+                            <option value="Class D">Class D (Passenger)</option>
+                            <option value="Class DJ">Class DJ (Junior Operator)</option>
+                            <option value="Class E">Class E (For-Hire Taxi/Limo)</option>
+                            <option value="Class M">Class M (Motorcycle)</option>
+                            <option value="Commercial">Commercial (CDL)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Vehículo Asignado y Turno -->
+            <div class="border-t border-slate-800/60 pt-6">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Detalles Operativos (Instructor)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Vehículo Asignado <span class="text-amber-500">*</span></label>
+                        <select id="ins-vehicle" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="">Selecciona vehículo...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tipo de Transmisión <span class="text-amber-500">*</span></label>
+                        <div class="flex gap-4 mt-1">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 flex-1">
+                                <input type="radio" name="ins-transmission" value="Automático" checked class="accent-amber-500">
+                                <span class="text-sm">Automático</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 flex-1">
+                                <input type="radio" name="ins-transmission" value="Mecánico" class="accent-amber-500">
+                                <span class="text-sm">Mecánico (Stick Shift)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Turno Horario <span class="text-amber-500">*</span></label>
+                        <select id="ins-shift" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="Mañana (8am-12pm)">Mañana (8am - 12pm)</option>
+                            <option value="Tarde (1pm-5pm)">Tarde (1pm - 5pm)</option>
+                            <option value="Completo (8am-5pm)">Completo (8am - 5pm)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/60 pt-6 flex justify-end gap-3">
+                <button type="reset" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-slate-800 hover:bg-slate-800 transition">Reiniciar Formulario</button>
+                <button type="submit" id="instructor-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-save" id="instructor-submit-btn-icon"></i> <span id="instructor-submit-btn-text">Registrar Instructor</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ================= PANELS: REGISTRO VEHICULO ================= -->
+    <div id="view-registro-vehiculo" class="hidden max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-8 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
+            <h3 class="text-lg font-bold text-slate-100" id="vehicle-form-title">Ficha de Registro de Vehículo</h3>
+            <p class="text-xs text-slate-400 mt-1" id="vehicle-form-subtitle">Crea nuevos expedientes de vehículos que se sincronizarán directamente con la base de datos.</p>
+        </div>
+
+        <form id="vehicle-form" class="p-8 space-y-6" onsubmit="handleVehicleSubmit(event)">
+            <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Vehículo</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Marca / Modelo <span class="text-amber-500">*</span></label>
+                    <input type="text" id="veh-brand" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Toyota Corolla (2022)">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Placa Patente <span class="text-amber-500">*</span></label>
+                    <input type="text" id="veh-plate" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. AB123CD">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Transmisión <span class="text-amber-500">*</span></label>
+                    <select id="veh-transmission" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                        <option value="Automático">Automático</option>
+                        <option value="Mecánico">Mecánico (Stick Shift)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/60 pt-6 flex justify-end gap-3">
+                <button type="reset" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-slate-800 hover:bg-slate-800 transition">Reiniciar Formulario</button>
+                <button type="submit" id="vehicle-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-save" id="vehicle-submit-btn-icon"></i> <span id="vehicle-submit-btn-text">Registrar Vehículo</span>
                 </button>
             </div>
         </form>
@@ -478,31 +718,26 @@
         // MOCKUP DATABASES (POPULATED WITH REAL DB DATA FROM CONTROLLER)
         let students = @json($students);
 
-        let instructors = [
-            { id: 'INS-01', name: 'Luis Rodríguez', license: 'NYS DMV Certified', phone: '+1 914-555-7788', vehicle: 'Toyota Corolla', plate: 'AB123CD', transmission: 'Automático', shift: 'Mañana (8am-12pm)', status: 'Disponible' },
-            { id: 'INS-02', name: 'Pedro Fuentes', license: 'NYS DMV Certified', phone: '+1 914-555-9900', vehicle: 'Chevrolet Aveo', plate: 'EF456GH', transmission: 'Mecánico', shift: 'Tarde (1pm-5pm)', status: 'En Clase' },
-            { id: 'INS-03', name: 'Sarah Evans', license: 'NYS DMV Senior Certified', phone: '+1 718-555-1122', vehicle: 'Nissan Sentra', plate: 'JK789LM', transmission: 'Automático', shift: 'Mañana (8am-12pm)', status: 'Disponible' }
-        ];
+        let instructors = @json($instructors);
 
-        let vehicles = [
-            { id: 'VEH-01', brand: 'Toyota Corolla (2022)', plate: 'AB123CD', transmission: 'Automático', status: 'Disponible' },
-            { id: 'VEH-02', brand: 'Chevrolet Aveo (2021)', plate: 'EF456GH', transmission: 'Mecánico', status: 'En Clase' },
-            { id: 'VEH-03', brand: 'Nissan Sentra (2023)', plate: 'JK789LM', transmission: 'Automático', status: 'Disponible' }
-        ];
+        let vehicles = @json($vehicles);
 
-        let reviews = [
-            { id: 'REV-001', instructor: 'Luis Rodríguez', rating: 5, vehicleRating: 5, comment: 'Excelente paciencia al enseñar, muy profesional en todo.' },
-            { id: 'REV-002', instructor: 'Pedro Fuentes', rating: 2, vehicleRating: 3, comment: 'El aire acondicionado del carro no enfriaba bien durante la clase práctica.' },
-            { id: 'REV-003', instructor: 'Sarah Evans', rating: 5, vehicleRating: 5, comment: 'La mejor instructora de Nueva York. Aprobé el examen de ruta en mi primer intento.' }
-        ];
+        let reviews = @json($reviews);
 
         // Active Sheet Tab indicator
         let activeSheetTab = 'students';
+
+        // Editing state tracking
+        let editingStudentId = null;
+        let editingInstructorId = null;
+        let editingVehicleId = null;
 
         function switchTab(tabId) {
             // Hide all views
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-inscripcion').classList.add('hidden');
+            document.getElementById('view-registro-instructor').classList.add('hidden');
+            document.getElementById('view-registro-vehiculo').classList.add('hidden');
             document.getElementById('view-encuesta').classList.add('hidden');
             document.getElementById('view-sheets-db').classList.add('hidden');
             document.getElementById('view-apps-script').classList.add('hidden');
@@ -520,6 +755,12 @@
             } else if (tabId === 'inscripcion') {
                 sectionPre.innerText = "Inscripciones";
                 sectionTitle.innerText = "Registrar Estudiante";
+            } else if (tabId === 'registro-instructor') {
+                sectionPre.innerText = "Instructores";
+                sectionTitle.innerText = "Registrar Instructor";
+            } else if (tabId === 'registro-vehiculo') {
+                sectionPre.innerText = "Vehículos";
+                sectionTitle.innerText = "Registrar Vehículo";
             } else if (tabId === 'encuesta') {
                 sectionPre.innerText = "Post-Venta / Feedback";
                 sectionTitle.innerText = "Encuesta de Servicio";
@@ -756,9 +997,12 @@
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+            const url = editingStudentId ? `/students/${editingStudentId}` : '/students';
+            const method = editingStudentId ? 'PUT' : 'POST';
+
             // Send AJAX Request
-            fetch('/students', {
-                method: 'POST',
+            fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
@@ -770,20 +1014,36 @@
             .then(res => {
                 if (res.success) {
                     const student = res.student;
-                    students.push(student);
                     
-                    showToast(`¡Estudiante ${student.name} registrado con éxito en la Base de Datos!`, "success");
+                    if (method === 'PUT') {
+                        const idx = students.findIndex(s => s.db_id === student.db_id);
+                        if (idx !== -1) {
+                            students[idx] = student;
+                        }
+                        showToast(`¡Estudiante ${student.name} actualizado con éxito en la Base de Datos!`, "success");
+                    } else {
+                        students.push(student);
+                        showToast(`¡Estudiante ${student.name} registrado con éxito en la Base de Datos!`, "success");
+                    }
 
                     // Logs Simulator Console
                     const consoleLogs = document.getElementById('console-logs');
-                    consoleLogs.innerHTML += `
-                        <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Inscripción de Alumnos)</p>
-                        <p class="text-slate-300">↳ Inserted DB Record ID: ${student.db_id} [Student ID: ${student.id}]</p>
-                        <p class="text-cyan-400">↳ Triggering 'generarFacturaPDF()' para ${student.name}...</p>
-                        <p class="text-slate-400">↳ File 'Factura_${student.id}_${student.name.replace(/ /g, "_")}.pdf' creado en Drive/Facturas</p>
-                        <p class="text-emerald-400">↳ Notificación automatizada enviada a ${student.phone}</p>
-                        <p class="text-slate-500">----------------------------------------------------</p>
-                    `;
+                    if (method === 'PUT') {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Modificación de Alumnos)</p>
+                            <p class="text-slate-300">↳ Updated DB Record ID: ${student.db_id} [Student ID: ${student.id}]</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    } else {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Inscripción de Alumnos)</p>
+                            <p class="text-slate-300">↳ Inserted DB Record ID: ${student.db_id} [Student ID: ${student.id}]</p>
+                            <p class="text-cyan-400">↳ Triggering 'generarFacturaPDF()' para ${student.name}...</p>
+                            <p class="text-slate-400">↳ File 'Factura_${student.id}_${student.name.replace(/ /g, "_")}.pdf' creado en Drive/Facturas</p>
+                            <p class="text-emerald-400">↳ Notificación automatizada enviada a ${student.phone}</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    }
 
                     // Reset Form and update calculations
                     document.getElementById('student-form').reset();
@@ -795,7 +1055,7 @@
                     setTimeout(() => {
                         switchTab('sheets-db');
                         switchSheetTab('students');
-                        showToast("Los datos se guardaron en la base de datos MySQL y se sincronizaron con Google Sheets", "info");
+                        showToast(method === 'PUT' ? "Los datos se actualizaron en la base de datos MySQL" : "Los datos se guardaron en la base de datos MySQL y se sincronizaron con Google Sheets", "info");
                     }, 1000);
                 } else {
                     showToast("Error de validación: " + (res.message || "Campos incompletos."), "warning");
@@ -805,6 +1065,289 @@
                 console.error(err);
                 showToast("Error de red o de servidor al registrar estudiante.", "warning");
             });
+        }
+
+        function handleInstructorSubmit(e) {
+            e.preventDefault();
+
+            // Collect variables
+            const first_name = document.getElementById('ins-first-name').value;
+            const middle_name = document.getElementById('ins-middle-name').value;
+            const last_name = document.getElementById('ins-last-name').value;
+            const birth_date = document.getElementById('ins-birth-date').value;
+            const gender = document.getElementById('ins-gender').value;
+            const email = document.getElementById('ins-email').value;
+            const phone = document.getElementById('ins-phone').value;
+            const address = document.getElementById('ins-address').value;
+            const city = document.getElementById('ins-city').value;
+            const state = document.getElementById('ins-state').value;
+            const zip_code = document.getElementById('ins-zip-code').value;
+            
+            // Optional DMV physical specs
+            const height = document.getElementById('ins-height').value;
+            const eye_color = document.getElementById('ins-eye-color').value;
+            const is_organ_donor = document.getElementById('ins-organ-donor').checked ? 1 : 0;
+
+            // Optional License permit info
+            const license_number = document.getElementById('ins-lic-number').value;
+            const expiration_date = document.getElementById('ins-lic-expiration').value;
+            const license_class = document.getElementById('ins-lic-class').value;
+
+            // Instructor-specific
+            const vehicle_id = document.getElementById('ins-vehicle').value;
+            const transmission = document.querySelector('input[name="ins-transmission"]:checked').value;
+            const shift = document.getElementById('ins-shift').value;
+
+            const data = {
+                first_name,
+                middle_name,
+                last_name,
+                birth_date,
+                gender,
+                email,
+                phone,
+                address,
+                city,
+                state,
+                zip_code,
+                height,
+                eye_color,
+                is_organ_donor,
+                license_number,
+                expiration_date,
+                license_class,
+                vehicle_id,
+                transmission,
+                shift
+            };
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            const url = editingInstructorId ? `/instructors/${editingInstructorId}` : '/instructors';
+            const method = editingInstructorId ? 'PUT' : 'POST';
+
+            // Send AJAX Request
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const instructor = res.instructor;
+                    
+                    if (method === 'PUT') {
+                        const idx = instructors.findIndex(i => i.db_id === instructor.db_id);
+                        if (idx !== -1) {
+                            instructors[idx] = instructor;
+                        }
+                        showToast(`¡Instructor ${instructor.name} actualizado con éxito en la Base de Datos!`, "success");
+                    } else {
+                        instructors.push(instructor);
+                        showToast(`¡Instructor ${instructor.name} registrado con éxito en la Base de Datos!`, "success");
+                    }
+
+                    // Logs Simulator Console
+                    const consoleLogs = document.getElementById('console-logs');
+                    if (method === 'PUT') {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Modificación de Instructores)</p>
+                            <p class="text-slate-300">↳ Updated DB Record ID: ${instructor.db_id} [Instructor ID: ${instructor.id}]</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    } else {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Registro de Instructores)</p>
+                            <p class="text-slate-300">↳ Inserted DB Record ID: ${instructor.db_id} [Instructor ID: ${instructor.id}]</p>
+                            <p class="text-emerald-400">↳ Instructor asignado al turno: ${instructor.shift}</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    }
+
+                    // Reset Form
+                    document.getElementById('instructor-form').reset();
+                    populateInstructorDropdown();
+                    updateDashboardMetrics();
+                    renderSheetTable();
+
+                    // Switch to sheets-db automatically to show dynamic insertion/update
+                    setTimeout(() => {
+                        switchTab('sheets-db');
+                        switchSheetTab('instructors');
+                        showToast(method === 'PUT' ? "Los datos se actualizaron en la base de datos MySQL" : "Los datos se guardaron en la base de datos MySQL y se sincronizaron con Google Sheets", "info");
+                    }, 1000);
+                } else {
+                    showToast("Error de validación: " + (res.message || "Campos incompletos."), "warning");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Error de red o de servidor al registrar instructor.", "warning");
+            });
+        }
+
+        function deleteInstructor(instructorId) {
+            const instructor = instructors.find(i => i.id === instructorId);
+            if (instructor) {
+                if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${instructor.name} de la base de datos?`)) return;
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(`/instructors/${instructor.db_id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        instructors = instructors.filter(i => i.id !== instructorId);
+                        showToast(`Instructor ${instructor.name} eliminado de la base de datos (Soft Deleted).`, "success");
+
+                        const log = document.getElementById('console-logs');
+                        log.innerHTML += `<p class="text-red-500">[DB_TRIGGER] Instructor eliminado en BD ID: ${instructor.db_id} [Instructor ID: ${instructorId}]</p>`;
+
+                        populateInstructorDropdown();
+                        updateDashboardMetrics();
+                        renderSheetTable();
+                    } else {
+                        showToast("Error al eliminar de la BD: " + (res.message || ""), "warning");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Error al eliminar instructor en el servidor.", "warning");
+                });
+            }
+        }
+
+        function populateVehicleDropdown() {
+            const insVehicleDropdown = document.getElementById('ins-vehicle');
+            if (insVehicleDropdown) {
+                insVehicleDropdown.innerHTML = '<option value="">Selecciona vehículo...</option>';
+                vehicles.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.db_id;
+                    opt.innerText = `${v.brand} [${v.plate}]`;
+                    insVehicleDropdown.appendChild(opt);
+                });
+            }
+        }
+
+        function handleVehicleSubmit(e) {
+            e.preventDefault();
+
+            const brand = document.getElementById('veh-brand').value;
+            const plate = document.getElementById('veh-plate').value;
+            const transmission = document.getElementById('veh-transmission').value;
+
+            const data = { brand, plate, transmission };
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const url = editingVehicleId ? `/vehicles/${editingVehicleId}` : '/vehicles';
+            const method = editingVehicleId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const vehicle = res.vehicle;
+                    
+                    if (method === 'PUT') {
+                        const idx = vehicles.findIndex(v => v.db_id === vehicle.db_id);
+                        if (idx !== -1) {
+                            vehicles[idx] = vehicle;
+                        }
+                        showToast(`¡Vehículo ${vehicle.brand} actualizado con éxito en la Base de Datos!`, "success");
+                    } else {
+                        vehicles.push(vehicle);
+                        showToast(`¡Vehículo ${vehicle.brand} registrado con éxito en la Base de Datos!`, "success");
+                    }
+
+                    const consoleLogs = document.getElementById('console-logs');
+                    if (method === 'PUT') {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Modificación de Vehículos)</p>
+                            <p class="text-slate-300">↳ Updated DB Record ID: ${vehicle.db_id} [Vehicle ID: ${vehicle.id}]</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    } else {
+                        consoleLogs.innerHTML += `
+                            <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Registro de Vehículos)</p>
+                            <p class="text-slate-300">↳ Inserted DB Record ID: ${vehicle.db_id} [Vehicle ID: ${vehicle.id}]</p>
+                            <p class="text-slate-500">----------------------------------------------------</p>
+                        `;
+                    }
+
+                    document.getElementById('vehicle-form').reset();
+                    populateVehicleDropdown();
+                    updateDashboardMetrics();
+                    renderSheetTable();
+
+                    setTimeout(() => {
+                        switchTab('sheets-db');
+                        switchSheetTab('vehicles');
+                        showToast(method === 'PUT' ? "Los datos se actualizaron en la base de datos MySQL" : "Los datos se guardaron en la base de datos MySQL y se sincronizaron con Google Sheets", "info");
+                    }, 1000);
+                } else {
+                    showToast("Error de validación: " + (res.message || "Campos incompletos."), "warning");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Error de red o de servidor al registrar vehículo.", "warning");
+            });
+        }
+
+        function deleteVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) {
+                if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el vehículo ${vehicle.brand} [${vehicle.plate}] de la base de datos?`)) return;
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(`/vehicles/${vehicle.db_id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        vehicles = vehicles.filter(v => v.id !== vehicleId);
+                        showToast(`Vehículo ${vehicle.brand} eliminado de la base de datos (Soft Deleted).`, "success");
+
+                        const log = document.getElementById('console-logs');
+                        log.innerHTML += `<p class="text-red-500">[DB_TRIGGER] Vehículo eliminado en BD ID: ${vehicle.db_id} [Vehicle ID: ${vehicleId}]</p>`;
+
+                        populateVehicleDropdown();
+                        updateDashboardMetrics();
+                        renderSheetTable();
+                    } else {
+                        showToast("Error al eliminar de la BD: " + (res.message || ""), "warning");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Error al eliminar vehículo en el servidor.", "warning");
+                });
+            }
         }
 
         function setStarRating(id, rating) {
@@ -827,7 +1370,7 @@
                 srvDropdown.innerHTML = '<option value="">Selecciona un profesional...</option>';
                 instructors.forEach(ins => {
                     const opt = document.createElement('option');
-                    opt.value = ins.name;
+                    opt.value = ins.db_id;
                     opt.innerText = ins.name;
                     srvDropdown.appendChild(opt);
                 });
@@ -837,50 +1380,78 @@
         function handleSurveySubmit(e) {
             e.preventDefault();
 
-            const instructor = document.getElementById('srv-instructor').value;
+            const instructorId = document.getElementById('srv-instructor').value;
             const rating = parseInt(document.getElementById('srv-rating').value);
             const vehRating = parseInt(document.getElementById('srv-vehicle-rating').value);
             const comment = document.getElementById('srv-comment').value;
+
+            if (!instructorId) {
+                showToast("Por favor selecciona un instructor.", "warning");
+                return;
+            }
 
             if (rating === 0 || vehRating === 0) {
                 showToast("Por favor califica ambas opciones con estrellas antes de enviar.", "warning");
                 return;
             }
 
-            const newRevId = `REV-00${reviews.length + 1}`;
-            reviews.push({
-                id: newRevId,
-                instructor: instructor,
+            const data = {
+                instructor_id: instructorId,
                 rating: rating,
-                vehicleRating: vehRating,
-                comment: comment || 'Sin comentarios adicionales'
-            });
+                vehicle_rating: vehRating,
+                comment: comment
+            };
 
-            showToast("¡Muchas gracias por evaluar nuestro servicio!", "success");
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            // Logs Simulator
-            const consoleLogs = document.getElementById('console-logs');
-            consoleLogs.innerHTML += `
-                <p class="text-green-400">[INFO] Event: FormSubmit (Encuesta Calidad)</p>
-                <p class="text-slate-300">↳ Row added in 'Encuestas' Tab. Calificación: ${rating}/5</p>
-                ${rating <= 2 ? `<p class="text-red-500">↳ ALERT [CRITICAL RATING]: Correo de alerta de calidad enviado a Gerencia. Instructor implicado: ${instructor}</p>` : ''}
-                <p class="text-slate-500">----------------------------------------------------</p>
-            `;
+            fetch('/reviews', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const review = res.review;
+                    reviews.push(review);
 
-            // Reset
-            document.getElementById('survey-form').reset();
-            setStarRating('srv-rating', 0);
-            setStarRating('srv-vehicle-rating', 0);
-            updateDashboardMetrics();
-            renderSheetTable();
+                    showToast("¡Muchas gracias por evaluar nuestro servicio!", "success");
 
-            // Auto navigate to see results
-            setTimeout(() => {
-                switchTab('dashboard');
-                if (rating <= 2) {
-                    showToast("Atención: Alerta roja de satisfacción generada en tu Dashboard.", "warning");
+                    // Logs Simulator
+                    const consoleLogs = document.getElementById('console-logs');
+                    consoleLogs.innerHTML += `
+                        <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Encuesta Calidad - Guardado en BD)</p>
+                        <p class="text-slate-300">↳ Row added in 'reviews' table. Calificación: ${rating}/5</p>
+                        ${rating <= 2 ? `<p class="text-red-500">↳ ALERT [CRITICAL RATING]: Correo de alerta de calidad enviado a Gerencia. Instructor implicado: ${review.instructor}</p>` : ''}
+                        <p class="text-slate-500">----------------------------------------------------</p>
+                    `;
+
+                    // Reset
+                    document.getElementById('survey-form').reset();
+                    setStarRating('srv-rating', 0);
+                    setStarRating('srv-vehicle-rating', 0);
+                    updateDashboardMetrics();
+                    renderSheetTable();
+
+                    // Auto navigate to see results
+                    setTimeout(() => {
+                        switchTab('dashboard');
+                        if (rating <= 2) {
+                            showToast("Atención: Alerta roja de satisfacción generada en tu Dashboard.", "warning");
+                        }
+                    }, 1000);
+                } else {
+                    showToast("Error de validación al enviar encuesta: " + (res.message || ""), "warning");
                 }
-            }, 1000);
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Error al enviar la evaluación al servidor.", "warning");
+            });
         }
 
         function switchSheetTab(tabKey) {
@@ -934,8 +1505,11 @@
                         <td class="px-4 py-2.5 border-r border-slate-800/40">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === 'Al Día' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-500'}">${s.status}</span>
                         </td>
-                        <td class="px-4 py-2.5 text-center">
-                            <button onclick="deleteStudent('${s.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition">
+                        <td class="px-4 py-2.5 text-center space-x-1">
+                            <button onclick="editStudent('${s.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteStudent('${s.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -953,7 +1527,8 @@
                         <th class="px-4 py-3 border-r border-slate-800">E - Auto Asignado</th>
                         <th class="px-4 py-3 border-r border-slate-800">F - Placa</th>
                         <th class="px-4 py-3 border-r border-slate-800">G - Turno Horario</th>
-                        <th class="px-4 py-3">H - Estatus</th>
+                        <th class="px-4 py-3 border-r border-slate-800">H - Estatus</th>
+                        <th class="px-4 py-3">Acción</th>
                     </tr>
                 `;
                 instructors.forEach(ins => {
@@ -962,13 +1537,21 @@
                     row.innerHTML = `
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${ins.id}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${ins.name}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.license}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.license_text || ins.license}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.phone}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.vehicle}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">${ins.plate}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.shift}</td>
-                        <td class="px-4 py-2.5">
+                        <td class="px-4 py-2.5 border-r border-slate-800/40">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${ins.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${ins.status}</span>
+                        </td>
+                        <td class="px-4 py-2.5 text-center space-x-1">
+                            <button onclick="editInstructor('${ins.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteInstructor('${ins.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </td>
                     `;
                     tableBody.appendChild(row);
@@ -981,7 +1564,8 @@
                         <th class="px-4 py-3 border-r border-slate-800">B - Marca / Modelo</th>
                         <th class="px-4 py-3 border-r border-slate-800">C - Placa Patente</th>
                         <th class="px-4 py-3 border-r border-slate-800">D - Transmisión</th>
-                        <th class="px-4 py-3">E - Estatus Operación</th>
+                        <th class="px-4 py-3 border-r border-slate-800">E - Estatus Operación</th>
+                        <th class="px-4 py-3">Acción</th>
                     </tr>
                 `;
                 vehicles.forEach(v => {
@@ -992,8 +1576,16 @@
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${v.brand}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">${v.plate}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${v.transmission}</td>
-                        <td class="px-4 py-2.5">
+                        <td class="px-4 py-2.5 border-r border-slate-800/40">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${v.status}</span>
+                        </td>
+                        <td class="px-4 py-2.5 text-center space-x-1">
+                            <button onclick="editVehicle('${v.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteVehicle('${v.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </td>
                     `;
                     tableBody.appendChild(row);
@@ -1102,10 +1694,176 @@
             document.getElementById('console-logs').innerHTML = '<p class="text-slate-500">// Consola limpia. Esperando nuevos triggers de eventos...</p>';
         }
 
+        function editStudent(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            editingStudentId = student.db_id;
+
+            // Pre-fill form fields
+            document.getElementById('stu-first-name').value = student.first_name || '';
+            document.getElementById('stu-middle-name').value = student.middle_name || '';
+            document.getElementById('stu-last-name').value = student.last_name || '';
+            document.getElementById('stu-birth-date').value = student.birth_date || '';
+            document.getElementById('stu-gender').value = student.gender || 'M';
+            document.getElementById('stu-email').value = student.email || '';
+            document.getElementById('stu-phone').value = student.phone || '';
+            document.getElementById('stu-address').value = student.address || '';
+            document.getElementById('stu-city').value = student.city || '';
+            document.getElementById('stu-state').value = student.state || 'NY';
+            document.getElementById('stu-zip-code').value = student.zip_code || '';
+            
+            // Optional DMV physical specs
+            document.getElementById('stu-height').value = student.height || '';
+            document.getElementById('stu-eye-color').value = student.eye_color || '';
+            document.getElementById('stu-organ-donor').checked = !!student.is_organ_donor;
+
+            // Optional License permit info
+            if (student.license) {
+                document.getElementById('lic-number').value = student.license.license_number || '';
+                document.getElementById('lic-expiration').value = student.license.expiration_date || '';
+                document.getElementById('lic-class').value = student.license.license_class || '';
+            } else {
+                document.getElementById('lic-number').value = '';
+                document.getElementById('lic-expiration').value = '';
+                document.getElementById('lic-class').value = '';
+            }
+
+            // Plan details
+            document.getElementById('stu-plan').value = student.plan || 'Package 2 (10 Hours + Test)';
+            document.getElementById('stu-cost').value = student.cost || 350;
+            document.getElementById('stu-paid').value = student.paid || 0;
+            document.getElementById('stu-debt').value = student.debt || 0;
+
+            const radioAutom = document.querySelector('input[name="stu-transmission"][value="Automático"]');
+            const radioMecan = document.querySelector('input[name="stu-transmission"][value="Mecánico"]');
+            if (student.transmission === 'Mecánico') {
+                if (radioMecan) radioMecan.checked = true;
+            } else {
+                if (radioAutom) radioAutom.checked = true;
+            }
+
+            // Toggle title and submit button texts to Edit Mode
+            document.getElementById('student-form-title').innerText = "Editar Expediente de Estudiante";
+            document.getElementById('student-form-subtitle').innerText = `Modificando datos del alumno ${student.name} [ID: ${student.id}] en la base de datos.`;
+            document.getElementById('student-submit-btn-text').innerText = "Guardar Cambios";
+            document.getElementById('student-submit-btn-icon').className = "fa-solid fa-pen-to-square";
+
+            // Switch to form tab
+            switchTab('inscripcion');
+        }
+
+        function editInstructor(instructorId) {
+            const instructor = instructors.find(i => i.id === instructorId);
+            if (!instructor) return;
+
+            editingInstructorId = instructor.db_id;
+
+            // Pre-fill form fields
+            document.getElementById('ins-first-name').value = instructor.first_name || '';
+            document.getElementById('ins-middle-name').value = instructor.middle_name || '';
+            document.getElementById('ins-last-name').value = instructor.last_name || '';
+            document.getElementById('ins-birth-date').value = instructor.birth_date || '';
+            document.getElementById('ins-gender').value = instructor.gender || 'M';
+            document.getElementById('ins-email').value = instructor.email || '';
+            document.getElementById('ins-phone').value = instructor.phone || '';
+            document.getElementById('ins-address').value = instructor.address || '';
+            document.getElementById('ins-city').value = instructor.city || '';
+            document.getElementById('ins-state').value = instructor.state || 'NY';
+            document.getElementById('ins-zip-code').value = instructor.zip_code || '';
+            
+            // Optional DMV physical specs
+            document.getElementById('ins-height').value = instructor.height || '';
+            document.getElementById('ins-eye-color').value = instructor.eye_color || '';
+            document.getElementById('ins-organ-donor').checked = !!instructor.is_organ_donor;
+
+            // Optional License/Certificate info
+            if (instructor.license) {
+                document.getElementById('ins-lic-number').value = instructor.license.license_number || '';
+                document.getElementById('ins-lic-expiration').value = instructor.license.expiration_date || '';
+                document.getElementById('ins-lic-class').value = instructor.license.license_class || '';
+            } else {
+                document.getElementById('ins-lic-number').value = '';
+                document.getElementById('ins-lic-expiration').value = '';
+                document.getElementById('ins-lic-class').value = '';
+            }
+
+            // Instructor-specific
+            document.getElementById('ins-vehicle').value = instructor.vehicle_id || '';
+            document.getElementById('ins-shift').value = instructor.shift || 'Mañana (8am-12pm)';
+
+            const radioAutom = document.querySelector('input[name="ins-transmission"][value="Automático"]');
+            const radioMecan = document.querySelector('input[name="ins-transmission"][value="Mecánico"]');
+            if (instructor.transmission === 'Mecánico') {
+                if (radioMecan) radioMecan.checked = true;
+            } else {
+                if (radioAutom) radioAutom.checked = true;
+            }
+
+            // Toggle title and submit button texts to Edit Mode
+            document.getElementById('instructor-form-title').innerText = "Editar Expediente de Instructor";
+            document.getElementById('instructor-form-subtitle').innerText = `Modificando datos del instructor ${instructor.name} [ID: ${instructor.id}] en la base de datos.`;
+            document.getElementById('instructor-submit-btn-text').innerText = "Guardar Cambios";
+            document.getElementById('instructor-submit-btn-icon').className = "fa-solid fa-pen-to-square";
+
+            // Switch to form tab
+            switchTab('registro-instructor');
+        }
+
+        function editVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (!vehicle) return;
+
+            editingVehicleId = vehicle.db_id;
+
+            // Pre-fill form fields
+            document.getElementById('veh-brand').value = vehicle.brand || '';
+            document.getElementById('veh-plate').value = vehicle.plate || '';
+            document.getElementById('veh-transmission').value = vehicle.transmission || 'Automático';
+
+            // Toggle title and submit button texts to Edit Mode
+            document.getElementById('vehicle-form-title').innerText = "Editar Vehículo";
+            document.getElementById('vehicle-form-subtitle').innerText = `Modificando datos del vehículo ${vehicle.brand} [Placa: ${vehicle.plate}] en la base de datos.`;
+            document.getElementById('vehicle-submit-btn-text').innerText = "Guardar Cambios";
+            document.getElementById('vehicle-submit-btn-icon').className = "fa-solid fa-pen-to-square";
+
+            // Switch to form tab
+            switchTab('registro-vehiculo');
+        }
+
         window.onload = function () {
             updateDashboardMetrics();
             populateInstructorDropdown();
+            populateVehicleDropdown();
             renderSheetTable();
+
+            // Set up form reset listeners
+            document.getElementById('student-form').addEventListener('reset', () => {
+                editingStudentId = null;
+                document.getElementById('student-form-title').innerText = "Ficha de Inscripción Digital";
+                document.getElementById('student-form-subtitle').innerText = "Crea nuevos expedientes que se sincronizarán directamente con la base de datos.";
+                document.getElementById('student-submit-btn-text').innerText = "Registrar Alumno";
+                document.getElementById('student-submit-btn-icon').className = "fa-solid fa-save";
+                setTimeout(() => {
+                    updatePlanCost();
+                }, 0);
+            });
+
+            document.getElementById('instructor-form').addEventListener('reset', () => {
+                editingInstructorId = null;
+                document.getElementById('instructor-form-title').innerText = "Ficha de Registro de Instructor";
+                document.getElementById('instructor-form-subtitle').innerText = "Crea nuevos expedientes de instructores que se sincronizarán directamente con la base de datos.";
+                document.getElementById('instructor-submit-btn-text').innerText = "Registrar Instructor";
+                document.getElementById('instructor-submit-btn-icon').className = "fa-solid fa-save";
+            });
+
+            document.getElementById('vehicle-form').addEventListener('reset', () => {
+                editingVehicleId = null;
+                document.getElementById('vehicle-form-title').innerText = "Ficha de Registro de Vehículo";
+                document.getElementById('vehicle-form-subtitle').innerText = "Crea nuevos expedientes de vehículos que se sincronizarán directamente con la base de datos.";
+                document.getElementById('vehicle-submit-btn-text').innerText = "Registrar Vehículo";
+                document.getElementById('vehicle-submit-btn-icon').className = "fa-solid fa-save";
+            });
         };
     </script>
 @endpush
