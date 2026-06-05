@@ -67,6 +67,7 @@ return new class extends Migration {
 
             // Copia Digital / Foto de la Licencia
             $table->string('license_photo_url')->nullable(); // Almacena la ruta en storage
+            $table->string('license_photo_back_url')->nullable();
 
             $table->boolean('is_active')->default(true); // Indica si es la licencia vigente del alumno
             $table->timestamps();

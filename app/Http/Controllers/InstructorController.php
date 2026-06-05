@@ -31,6 +31,9 @@ class InstructorController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
+            'instructor_photo' => 'nullable|string',
+            'license_photo' => 'nullable|string',
+            'license_photo_back' => 'nullable|string',
 
             // Instructor-specific details
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -45,6 +48,9 @@ class InstructorController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Save images
+            $instructor_photo_url = $this->saveImage($validated['instructor_photo'] ?? null, 'instructors', 'instructor_profile');
 
             // Create instructor
             $instructor = Instructor::create([
@@ -62,6 +68,7 @@ class InstructorController extends Controller
                 'height' => $validated['height'] ?? null,
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
+                'instructor_photo_url' => $instructor_photo_url,
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
                 'shift' => $validated['shift'] ?? null,
@@ -71,11 +78,16 @@ class InstructorController extends Controller
             // Create license if filled
             $activeLicense = null;
             if (!empty($validated['license_number'])) {
+                $license_photo_url = $this->saveImage($validated['license_photo'] ?? null, 'licenses', 'lic_front');
+                $license_photo_back_url = $this->saveImage($validated['license_photo_back'] ?? null, 'licenses', 'lic_back');
+
                 $activeLicense = InstructorLicense::create([
                     'instructor_id' => $instructor->id,
                     'license_number' => $validated['license_number'],
                     'expiration_date' => $validated['expiration_date'],
                     'license_class' => $validated['license_class'],
+                    'license_photo_url' => $license_photo_url,
+                    'license_photo_back_url' => $license_photo_back_url,
                     'is_active' => true,
                 ]);
             }
@@ -112,11 +124,14 @@ class InstructorController extends Controller
                     'height' => $instructor->height,
                     'eye_color' => $instructor->eye_color,
                     'is_organ_donor' => (bool) $instructor->is_organ_donor,
+                    'instructor_photo_url' => $instructor->instructor_photo_url,
                     'license_text' => $activeLicense ? ($activeLicense->license_class . ' (' . $activeLicense->license_number . ')') : 'NYS DMV Certified',
                     'license' => $activeLicense ? [
                         'license_number' => $activeLicense->license_number,
                         'expiration_date' => $activeLicense->expiration_date,
                         'license_class' => $activeLicense->license_class,
+                        'license_photo_url' => $activeLicense->license_photo_url,
+                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
                     ] : null
                 ]
             ]);
@@ -154,6 +169,9 @@ class InstructorController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
+            'instructor_photo' => 'nullable|string',
+            'license_photo' => 'nullable|string',
+            'license_photo_back' => 'nullable|string',
 
             // Instructor-specific details
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -168,6 +186,20 @@ class InstructorController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Update instructor photo
+            $insPhotoVal = $request->input('instructor_photo');
+            $instructor_photo_url = $instructor->instructor_photo_url;
+            
+            if ($insPhotoVal !== $instructor->instructor_photo_url) {
+                if (empty($insPhotoVal)) {
+                    $this->deleteOldImage($instructor->instructor_photo_url);
+                    $instructor_photo_url = null;
+                } else if (str_starts_with($insPhotoVal, 'data:image/')) {
+                    $this->deleteOldImage($instructor->instructor_photo_url);
+                    $instructor_photo_url = $this->saveImage($insPhotoVal, 'instructors', 'instructor_profile');
+                }
+            }
 
             $instructor->update([
                 'first_name' => $validated['first_name'],
@@ -184,6 +216,7 @@ class InstructorController extends Controller
                 'height' => $validated['height'] ?? null,
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
+                'instructor_photo_url' => $instructor_photo_url,
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
                 'shift' => $validated['shift'] ?? null,
@@ -192,11 +225,45 @@ class InstructorController extends Controller
             // Update or create license
             $activeLicense = $instructor->activeLicense;
             if (!empty($validated['license_number'])) {
+                $licPhotoVal = $request->input('license_photo');
+                $licPhotoBackVal = $request->input('license_photo_back');
+                
+                $license_photo_url = $activeLicense ? $activeLicense->license_photo_url : null;
+                $license_photo_back_url = $activeLicense ? $activeLicense->license_photo_back_url : null;
+                
+                // Front photo change
+                if ($activeLicense && $licPhotoVal !== $activeLicense->license_photo_url) {
+                    if (empty($licPhotoVal)) {
+                        $this->deleteOldImage($activeLicense->license_photo_url);
+                        $license_photo_url = null;
+                    } else if (str_starts_with($licPhotoVal, 'data:image/')) {
+                        $this->deleteOldImage($activeLicense->license_photo_url);
+                        $license_photo_url = $this->saveImage($licPhotoVal, 'licenses', 'lic_front');
+                    }
+                } else if (!$activeLicense && !empty($licPhotoVal)) {
+                    $license_photo_url = $this->saveImage($licPhotoVal, 'licenses', 'lic_front');
+                }
+                
+                // Back photo change
+                if ($activeLicense && $licPhotoBackVal !== $activeLicense->license_photo_back_url) {
+                    if (empty($licPhotoBackVal)) {
+                        $this->deleteOldImage($activeLicense->license_photo_back_url);
+                        $license_photo_back_url = null;
+                    } else if (str_starts_with($licPhotoBackVal, 'data:image/')) {
+                        $this->deleteOldImage($activeLicense->license_photo_back_url);
+                        $license_photo_back_url = $this->saveImage($licPhotoBackVal, 'licenses', 'lic_back');
+                    }
+                } else if (!$activeLicense && !empty($licPhotoBackVal)) {
+                    $license_photo_back_url = $this->saveImage($licPhotoBackVal, 'licenses', 'lic_back');
+                }
+
                 if ($activeLicense) {
                     $activeLicense->update([
                         'license_number' => $validated['license_number'],
                         'expiration_date' => $validated['expiration_date'],
                         'license_class' => $validated['license_class'],
+                        'license_photo_url' => $license_photo_url,
+                        'license_photo_back_url' => $license_photo_back_url,
                     ]);
                 } else {
                     $activeLicense = InstructorLicense::create([
@@ -204,12 +271,20 @@ class InstructorController extends Controller
                         'license_number' => $validated['license_number'],
                         'expiration_date' => $validated['expiration_date'],
                         'license_class' => $validated['license_class'],
+                        'license_photo_url' => $license_photo_url,
+                        'license_photo_back_url' => $license_photo_back_url,
                         'is_active' => true,
                     ]);
                 }
             } else {
                 if ($activeLicense) {
-                    $activeLicense->update(['is_active' => false]);
+                    $this->deleteOldImage($activeLicense->license_photo_url);
+                    $this->deleteOldImage($activeLicense->license_photo_back_url);
+                    $activeLicense->update([
+                        'is_active' => false,
+                        'license_photo_url' => null,
+                        'license_photo_back_url' => null,
+                    ]);
                     $activeLicense = null;
                 }
             }
@@ -246,11 +321,14 @@ class InstructorController extends Controller
                     'height' => $instructor->height,
                     'eye_color' => $instructor->eye_color,
                     'is_organ_donor' => (bool) $instructor->is_organ_donor,
+                    'instructor_photo_url' => $instructor->instructor_photo_url,
                     'license_text' => $activeLicense ? ($activeLicense->license_class . ' (' . $activeLicense->license_number . ')') : 'NYS DMV Certified',
                     'license' => $activeLicense ? [
                         'license_number' => $activeLicense->license_number,
                         'expiration_date' => $activeLicense->expiration_date,
                         'license_class' => $activeLicense->license_class,
+                        'license_photo_url' => $activeLicense->license_photo_url,
+                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
                     ] : null
                 ]
             ]);
@@ -283,6 +361,53 @@ class InstructorController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar instructor: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function saveImage($base64, $subfolder, $prefix)
+    {
+        if (empty($base64)) {
+            return null;
+        }
+
+        if (str_starts_with($base64, '/uploads/')) {
+            return $base64;
+        }
+
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+            $data = substr($base64, strpos($base64, ',') + 1);
+            $type = strtolower($type[1]); // png, jpg, jpeg, gif, webp
+
+            if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
+                throw new \Exception('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.');
+            }
+
+            $data = base64_decode($data);
+            if ($data === false) {
+                throw new \Exception('Fallo al decodificar la imagen.');
+            }
+
+            $fileName = $prefix . '_' . uniqid() . '.' . $type;
+            $dirPath = public_path('uploads/' . $subfolder);
+            
+            if (!file_exists($dirPath)) {
+                mkdir($dirPath, 0777, true);
+            }
+
+            file_put_contents($dirPath . '/' . $fileName, $data);
+            return '/uploads/' . $subfolder . '/' . $fileName;
+        }
+
+        return null;
+    }
+
+    private function deleteOldImage($url)
+    {
+        if ($url && str_starts_with($url, '/uploads/')) {
+            $path = public_path(ltrim($url, '/'));
+            if (file_exists($path)) {
+                @unlink($path);
+            }
         }
     }
 }

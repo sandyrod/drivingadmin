@@ -20,6 +20,7 @@ class InstructorLicense extends Model
         'expiration_date',
         'license_class',
         'license_photo_url',
+        'license_photo_back_url',
         'is_active',
     ];
 

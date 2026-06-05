@@ -101,6 +101,12 @@
             <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Estudiante</h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
+                    <input type="text" id="stu-last-name" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Pérez">
+                </div>
+                <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Primer Nombre <span class="text-amber-500">*</span></label>
                     <input type="text" id="stu-first-name" required
                         class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
@@ -111,12 +117,6 @@
                     <input type="text" id="stu-middle-name"
                         class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
                         placeholder="Ej. Andrés">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-last-name" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Pérez">
                 </div>
             </div>
 
@@ -209,6 +209,29 @@
                         </label>
                     </div>
                 </div>
+                <div class="mt-6">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de Perfil (Opcional)</label>
+                    <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition text-center" id="stu-photo-zone" onclick="document.getElementById('stu-photo-input').click()">
+                        <input type="file" id="stu-photo-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')">
+                        <input type="hidden" id="stu-photo-base64" value="">
+                        
+                        <!-- Placeholder State -->
+                        <div class="upload-placeholder flex flex-col items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                            <span class="text-xs text-slate-400 font-medium">Subir Foto de Perfil</span>
+                            <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                        </div>
+                        
+                        <!-- Preview State -->
+                        <img id="stu-photo-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Vista previa">
+                        
+                        <!-- Remove Button -->
+                        <button type="button" onclick="clearUpload(event, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')" 
+                            class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="stu-photo-remove">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 4. Licencia o Permiso NY DMV -->
@@ -237,6 +260,54 @@
                             <option value="Class M">Class M (Motorcycle)</option>
                             <option value="Commercial">Commercial (CDL)</option>
                         </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Anverso)</label>
+                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="lic-front-zone" onclick="document.getElementById('lic-front-input').click()">
+                            <input type="file" id="lic-front-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')">
+                            <input type="hidden" id="lic-front-base64" value="">
+                            
+                            <!-- Placeholder -->
+                            <div class="upload-placeholder flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Anverso)</span>
+                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                            </div>
+                            
+                            <!-- Preview -->
+                            <img id="lic-front-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Anverso">
+                            
+                            <!-- Remove Button -->
+                            <button type="button" onclick="clearUpload(event, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')" 
+                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="lic-front-remove">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Reverso)</label>
+                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="lic-back-zone" onclick="document.getElementById('lic-back-input').click()">
+                            <input type="file" id="lic-back-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')">
+                            <input type="hidden" id="lic-back-base64" value="">
+                            
+                            <!-- Placeholder -->
+                            <div class="upload-placeholder flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Reverso)</span>
+                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                            </div>
+                            
+                            <!-- Preview -->
+                            <img id="lic-back-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Reverso">
+                            
+                            <!-- Remove Button -->
+                            <button type="button" onclick="clearUpload(event, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')" 
+                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="lic-back-remove">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -316,6 +387,12 @@
             <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Instructor</h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
+                    <input type="text" id="ins-last-name" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. Rodríguez">
+                </div>    
+                <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Primer Nombre <span class="text-amber-500">*</span></label>
                     <input type="text" id="ins-first-name" required
                         class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
@@ -327,12 +404,7 @@
                         class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
                         placeholder="Ej. Felipe">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
-                    <input type="text" id="ins-last-name" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Rodríguez">
-                </div>
+                
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -424,6 +496,29 @@
                         </label>
                     </div>
                 </div>
+                <div class="mt-6">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de Perfil (Opcional)</label>
+                    <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition text-center" id="ins-photo-zone" onclick="document.getElementById('ins-photo-input').click()">
+                        <input type="file" id="ins-photo-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'ins-photo-preview', 'ins-photo-zone', 'ins-photo-base64')">
+                        <input type="hidden" id="ins-photo-base64" value="">
+                        
+                        <!-- Placeholder State -->
+                        <div class="upload-placeholder flex flex-col items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                            <span class="text-xs text-slate-400 font-medium">Subir Foto de Perfil</span>
+                            <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                        </div>
+                        
+                        <!-- Preview State -->
+                        <img id="ins-photo-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Vista previa">
+                        
+                        <!-- Remove Button -->
+                        <button type="button" onclick="clearUpload(event, 'ins-photo-input', 'ins-photo-preview', 'ins-photo-zone', 'ins-photo-base64')" 
+                            class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="ins-photo-remove">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 4. Licencia de Instructor NY DMV -->
@@ -452,6 +547,54 @@
                             <option value="Class M">Class M (Motorcycle)</option>
                             <option value="Commercial">Commercial (CDL)</option>
                         </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Anverso)</label>
+                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="ins-lic-front-zone" onclick="document.getElementById('ins-lic-front-input').click()">
+                            <input type="file" id="ins-lic-front-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'ins-lic-front-preview', 'ins-lic-front-zone', 'ins-lic-front-base64')">
+                            <input type="hidden" id="ins-lic-front-base64" value="">
+                            
+                            <!-- Placeholder -->
+                            <div class="upload-placeholder flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Anverso)</span>
+                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                            </div>
+                            
+                            <!-- Preview -->
+                            <img id="ins-lic-front-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Anverso">
+                            
+                            <!-- Remove Button -->
+                            <button type="button" onclick="clearUpload(event, 'ins-lic-front-input', 'ins-lic-front-preview', 'ins-lic-front-zone', 'ins-lic-front-base64')" 
+                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="ins-lic-front-remove">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Reverso)</label>
+                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="ins-lic-back-zone" onclick="document.getElementById('ins-lic-back-input').click()">
+                            <input type="file" id="ins-lic-back-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'ins-lic-back-preview', 'ins-lic-back-zone', 'ins-lic-back-base64')">
+                            <input type="hidden" id="ins-lic-back-base64" value="">
+                            
+                            <!-- Placeholder -->
+                            <div class="upload-placeholder flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Reverso)</span>
+                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
+                            </div>
+                            
+                            <!-- Preview -->
+                            <img id="ins-lic-back-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Reverso">
+                            
+                            <!-- Remove Button -->
+                            <button type="button" onclick="clearUpload(event, 'ins-lic-back-input', 'ins-lic-back-preview', 'ins-lic-back-zone', 'ins-lic-back-base64')" 
+                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="ins-lic-back-remove">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -732,7 +875,65 @@
         let editingInstructorId = null;
         let editingVehicleId = null;
 
-        function switchTab(tabId) {
+        function handleFileSelect(inputElement, previewImgId, containerId, base64HolderId) {
+            const file = inputElement.files[0];
+            if (file) {
+                if (file.size > 4 * 1024 * 1024) {
+                    showToast("La imagen supera los 4MB.", "warning");
+                    inputElement.value = '';
+                    return;
+                }
+                if (!file.type.startsWith("image/")) {
+                    showToast("El archivo seleccionado debe ser una imagen.", "warning");
+                    inputElement.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    const img = document.getElementById(previewImgId);
+                    img.src = base64;
+                    img.classList.remove('hidden');
+                    document.getElementById(containerId).querySelector('.upload-placeholder').classList.add('hidden');
+                    document.getElementById(base64HolderId).value = base64;
+                    
+                    // Show remove button
+                    const removeId = inputElement.id.replace('-input', '-remove');
+                    const removeBtn = document.getElementById(removeId);
+                    if (removeBtn) removeBtn.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearUpload(event, inputId, previewId, zoneId, base64HolderId) {
+            if (event) event.stopPropagation();
+            const input = document.getElementById(inputId);
+            if (input) input.value = '';
+            
+            const holder = document.getElementById(base64HolderId);
+            if (holder) holder.value = '';
+            
+            const img = document.getElementById(previewId);
+            if (img) {
+                img.src = '';
+                img.classList.add('hidden');
+            }
+            
+            const zone = document.getElementById(zoneId);
+            if (zone) {
+                const placeholder = zone.querySelector('.upload-placeholder');
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+            
+            // Hide remove button
+            const removeId = inputId.replace('-input', '-remove');
+            const removeBtn = document.getElementById(removeId);
+            if (removeBtn) removeBtn.classList.add('hidden');
+        }
+
+        function switchTab(tabId, isEditing = false) {
             // Hide all views
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-inscripcion').classList.add('hidden');
@@ -755,9 +956,35 @@
             } else if (tabId === 'inscripcion') {
                 sectionPre.innerText = "Inscripciones";
                 sectionTitle.innerText = "Registrar Estudiante";
+                if (!isEditing) {
+                    editingStudentId = null;
+                    document.getElementById('student-form').reset();
+                    document.getElementById('student-form-title').innerText = "Ficha de Inscripción Digital";
+                    document.getElementById('student-form-subtitle').innerText = "Crea nuevos expedientes que se sincronizarán directamente con la base de datos.";
+                    document.getElementById('student-submit-btn-text').innerText = "Registrar Alumno";
+                    document.getElementById('student-submit-btn-icon').className = "fa-solid fa-save";
+                    
+                    // Clear upload previews
+                    clearUpload(null, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64');
+                    clearUpload(null, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64');
+                    clearUpload(null, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64');
+                }
             } else if (tabId === 'registro-instructor') {
                 sectionPre.innerText = "Instructores";
                 sectionTitle.innerText = "Registrar Instructor";
+                if (!isEditing) {
+                    editingInstructorId = null;
+                    document.getElementById('instructor-form').reset();
+                    document.getElementById('instructor-form-title').innerText = "Ficha de Registro de Instructor";
+                    document.getElementById('instructor-form-subtitle').innerText = "Crea nuevos expedientes de instructores que se sincronizarán directamente con la base de datos.";
+                    document.getElementById('instructor-submit-btn-text').innerText = "Registrar Instructor";
+                    document.getElementById('instructor-submit-btn-icon').className = "fa-solid fa-save";
+                    
+                    // Clear upload previews
+                    clearUpload(null, 'ins-photo-input', 'ins-photo-preview', 'ins-photo-zone', 'ins-photo-base64');
+                    clearUpload(null, 'ins-lic-front-input', 'ins-lic-front-preview', 'ins-lic-front-zone', 'ins-lic-front-base64');
+                    clearUpload(null, 'ins-lic-back-input', 'ins-lic-back-preview', 'ins-lic-back-zone', 'ins-lic-back-base64');
+                }
             } else if (tabId === 'registro-vehiculo') {
                 sectionPre.innerText = "Vehículos";
                 sectionTitle.innerText = "Registrar Vehículo";
@@ -970,6 +1197,11 @@
             const debt = parseFloat(document.getElementById('stu-debt').value);
             const trans = document.querySelector('input[name="stu-transmission"]:checked').value;
 
+            // Image uploads
+            const student_photo = document.getElementById('stu-photo-base64').value;
+            const license_photo = document.getElementById('lic-front-base64').value;
+            const license_photo_back = document.getElementById('lic-back-base64').value;
+
             const data = {
                 first_name,
                 middle_name,
@@ -988,6 +1220,9 @@
                 license_number,
                 expiration_date,
                 license_class,
+                student_photo,
+                license_photo,
+                license_photo_back,
                 package: plan,
                 transmission: trans,
                 plan_cost: cost,
@@ -1047,6 +1282,9 @@
 
                     // Reset Form and update calculations
                     document.getElementById('student-form').reset();
+                    clearUpload(null, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64');
+                    clearUpload(null, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64');
+                    clearUpload(null, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64');
                     updatePlanCost();
                     updateDashboardMetrics();
                     renderSheetTable();
@@ -1098,6 +1336,11 @@
             const transmission = document.querySelector('input[name="ins-transmission"]:checked').value;
             const shift = document.getElementById('ins-shift').value;
 
+            // Image uploads
+            const instructor_photo = document.getElementById('ins-photo-base64').value;
+            const license_photo = document.getElementById('ins-lic-front-base64').value;
+            const license_photo_back = document.getElementById('ins-lic-back-base64').value;
+
             const data = {
                 first_name,
                 middle_name,
@@ -1116,6 +1359,9 @@
                 license_number,
                 expiration_date,
                 license_class,
+                instructor_photo,
+                license_photo,
+                license_photo_back,
                 vehicle_id,
                 transmission,
                 shift
@@ -1171,6 +1417,9 @@
 
                     // Reset Form
                     document.getElementById('instructor-form').reset();
+                    clearUpload(null, 'ins-photo-input', 'ins-photo-preview', 'ins-photo-zone', 'ins-photo-base64');
+                    clearUpload(null, 'ins-lic-front-input', 'ins-lic-front-preview', 'ins-lic-front-zone', 'ins-lic-front-base64');
+                    clearUpload(null, 'ins-lic-back-input', 'ins-lic-back-preview', 'ins-lic-back-zone', 'ins-lic-back-base64');
                     populateInstructorDropdown();
                     updateDashboardMetrics();
                     renderSheetTable();
@@ -1743,6 +1992,37 @@
                 if (radioAutom) radioAutom.checked = true;
             }
 
+            // Pre-fill photos
+            if (student.student_photo_url) {
+                document.getElementById('stu-photo-preview').src = student.student_photo_url;
+                document.getElementById('stu-photo-preview').classList.remove('hidden');
+                document.getElementById('stu-photo-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('stu-photo-base64').value = student.student_photo_url;
+                document.getElementById('stu-photo-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64');
+            }
+
+            if (student.license && student.license.license_photo_url) {
+                document.getElementById('lic-front-preview').src = student.license.license_photo_url;
+                document.getElementById('lic-front-preview').classList.remove('hidden');
+                document.getElementById('lic-front-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('lic-front-base64').value = student.license.license_photo_url;
+                document.getElementById('lic-front-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64');
+            }
+
+            if (student.license && student.license.license_photo_back_url) {
+                document.getElementById('lic-back-preview').src = student.license.license_photo_back_url;
+                document.getElementById('lic-back-preview').classList.remove('hidden');
+                document.getElementById('lic-back-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('lic-back-base64').value = student.license.license_photo_back_url;
+                document.getElementById('lic-back-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64');
+            }
+
             // Toggle title and submit button texts to Edit Mode
             document.getElementById('student-form-title').innerText = "Editar Expediente de Estudiante";
             document.getElementById('student-form-subtitle').innerText = `Modificando datos del alumno ${student.name} [ID: ${student.id}] en la base de datos.`;
@@ -1750,7 +2030,7 @@
             document.getElementById('student-submit-btn-icon').className = "fa-solid fa-pen-to-square";
 
             // Switch to form tab
-            switchTab('inscripcion');
+            switchTab('inscripcion', true);
         }
 
         function editInstructor(instructorId) {
@@ -1800,6 +2080,37 @@
                 if (radioAutom) radioAutom.checked = true;
             }
 
+            // Pre-fill photos
+            if (instructor.instructor_photo_url) {
+                document.getElementById('ins-photo-preview').src = instructor.instructor_photo_url;
+                document.getElementById('ins-photo-preview').classList.remove('hidden');
+                document.getElementById('ins-photo-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('ins-photo-base64').value = instructor.instructor_photo_url;
+                document.getElementById('ins-photo-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'ins-photo-input', 'ins-photo-preview', 'ins-photo-zone', 'ins-photo-base64');
+            }
+
+            if (instructor.license && instructor.license.license_photo_url) {
+                document.getElementById('ins-lic-front-preview').src = instructor.license.license_photo_url;
+                document.getElementById('ins-lic-front-preview').classList.remove('hidden');
+                document.getElementById('ins-lic-front-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('ins-lic-front-base64').value = instructor.license.license_photo_url;
+                document.getElementById('ins-lic-front-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'ins-lic-front-input', 'ins-lic-front-preview', 'ins-lic-front-zone', 'ins-lic-front-base64');
+            }
+
+            if (instructor.license && instructor.license.license_photo_back_url) {
+                document.getElementById('ins-lic-back-preview').src = instructor.license.license_photo_back_url;
+                document.getElementById('ins-lic-back-preview').classList.remove('hidden');
+                document.getElementById('ins-lic-back-zone').querySelector('.upload-placeholder').classList.add('hidden');
+                document.getElementById('ins-lic-back-base64').value = instructor.license.license_photo_back_url;
+                document.getElementById('ins-lic-back-remove').classList.remove('hidden');
+            } else {
+                clearUpload(null, 'ins-lic-back-input', 'ins-lic-back-preview', 'ins-lic-back-zone', 'ins-lic-back-base64');
+            }
+
             // Toggle title and submit button texts to Edit Mode
             document.getElementById('instructor-form-title').innerText = "Editar Expediente de Instructor";
             document.getElementById('instructor-form-subtitle').innerText = `Modificando datos del instructor ${instructor.name} [ID: ${instructor.id}] en la base de datos.`;
@@ -1807,7 +2118,7 @@
             document.getElementById('instructor-submit-btn-icon').className = "fa-solid fa-pen-to-square";
 
             // Switch to form tab
-            switchTab('registro-instructor');
+            switchTab('registro-instructor', true);
         }
 
         function editVehicle(vehicleId) {

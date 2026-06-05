@@ -50,10 +50,13 @@ class StudentController extends Controller
                 'height' => $s->height,
                 'eye_color' => $s->eye_color,
                 'is_organ_donor' => (bool) $s->is_organ_donor,
+                'student_photo_url' => $s->student_photo_url,
                 'license' => $activeLicense ? [
                     'license_number' => $activeLicense->license_number,
                     'expiration_date' => $activeLicense->expiration_date,
                     'license_class' => $activeLicense->license_class,
+                    'license_photo_url' => $activeLicense->license_photo_url,
+                    'license_photo_back_url' => $activeLicense->license_photo_back_url,
                 ] : null
             ];
         });
@@ -93,11 +96,14 @@ class StudentController extends Controller
                 'height' => $ins->height,
                 'eye_color' => $ins->eye_color,
                 'is_organ_donor' => (bool) $ins->is_organ_donor,
+                'instructor_photo_url' => $ins->instructor_photo_url,
                 'license_text' => $activeLicense ? ($activeLicense->license_class . ' (' . $activeLicense->license_number . ')') : 'NYS DMV Certified',
                 'license' => $activeLicense ? [
                     'license_number' => $activeLicense->license_number,
                     'expiration_date' => $activeLicense->expiration_date,
                     'license_class' => $activeLicense->license_class,
+                    'license_photo_url' => $activeLicense->license_photo_url,
+                    'license_photo_back_url' => $activeLicense->license_photo_back_url,
                 ] : null
             ];
         });
@@ -154,6 +160,9 @@ class StudentController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
+            'student_photo' => 'nullable|string',
+            'license_photo' => 'nullable|string',
+            'license_photo_back' => 'nullable|string',
 
             // Enrollment details
             'package' => 'required|string|max:100',
@@ -171,6 +180,9 @@ class StudentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Save images
+            $student_photo_url = $this->saveImage($validated['student_photo'] ?? null, 'students', 'student_profile');
+
             // Create student
             $student = Student::create([
                 'first_name' => $validated['first_name'],
@@ -187,6 +199,7 @@ class StudentController extends Controller
                 'height' => $validated['height'] ?? null,
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
+                'student_photo_url' => $student_photo_url,
                 'package' => $validated['package'],
                 'transmission' => $validated['transmission'],
                 'plan_cost' => $validated['plan_cost'],
@@ -198,11 +211,16 @@ class StudentController extends Controller
             // Create license/permit if filled
             $activeLicense = null;
             if (!empty($validated['license_number'])) {
+                $license_photo_url = $this->saveImage($validated['license_photo'] ?? null, 'licenses', 'lic_front');
+                $license_photo_back_url = $this->saveImage($validated['license_photo_back'] ?? null, 'licenses', 'lic_back');
+
                 $activeLicense = StudentLicense::create([
                     'student_id' => $student->id,
                     'license_number' => $validated['license_number'],
                     'expiration_date' => $validated['expiration_date'],
                     'license_class' => $validated['license_class'],
+                    'license_photo_url' => $license_photo_url,
+                    'license_photo_back_url' => $license_photo_back_url,
                     'is_active' => true,
                 ]);
             }
@@ -237,10 +255,13 @@ class StudentController extends Controller
                     'height' => $student->height,
                     'eye_color' => $student->eye_color,
                     'is_organ_donor' => (bool) $student->is_organ_donor,
+                    'student_photo_url' => $student->student_photo_url,
                     'license' => $activeLicense ? [
                         'license_number' => $activeLicense->license_number,
                         'expiration_date' => $activeLicense->expiration_date,
                         'license_class' => $activeLicense->license_class,
+                        'license_photo_url' => $activeLicense->license_photo_url,
+                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
                     ] : null
                 ]
             ]);
@@ -320,6 +341,9 @@ class StudentController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
+            'student_photo' => 'nullable|string',
+            'license_photo' => 'nullable|string',
+            'license_photo_back' => 'nullable|string',
 
             // Enrollment details
             'package' => 'required|string|max:100',
@@ -337,6 +361,20 @@ class StudentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Update student photo
+            $studentPhotoVal = $request->input('student_photo');
+            $student_photo_url = $student->student_photo_url;
+            
+            if ($studentPhotoVal !== $student->student_photo_url) {
+                if (empty($studentPhotoVal)) {
+                    $this->deleteOldImage($student->student_photo_url);
+                    $student_photo_url = null;
+                } else if (str_starts_with($studentPhotoVal, 'data:image/')) {
+                    $this->deleteOldImage($student->student_photo_url);
+                    $student_photo_url = $this->saveImage($studentPhotoVal, 'students', 'student_profile');
+                }
+            }
+
             $student->update([
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'] ?? null,
@@ -352,6 +390,7 @@ class StudentController extends Controller
                 'height' => $validated['height'] ?? null,
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
+                'student_photo_url' => $student_photo_url,
                 'package' => $validated['package'],
                 'transmission' => $validated['transmission'],
                 'plan_cost' => $validated['plan_cost'],
@@ -363,11 +402,45 @@ class StudentController extends Controller
             // Update or create license
             $activeLicense = $student->activeLicense;
             if (!empty($validated['license_number'])) {
+                $licPhotoVal = $request->input('license_photo');
+                $licPhotoBackVal = $request->input('license_photo_back');
+                
+                $license_photo_url = $activeLicense ? $activeLicense->license_photo_url : null;
+                $license_photo_back_url = $activeLicense ? $activeLicense->license_photo_back_url : null;
+                
+                // Front photo change
+                if ($activeLicense && $licPhotoVal !== $activeLicense->license_photo_url) {
+                    if (empty($licPhotoVal)) {
+                        $this->deleteOldImage($activeLicense->license_photo_url);
+                        $license_photo_url = null;
+                    } else if (str_starts_with($licPhotoVal, 'data:image/')) {
+                        $this->deleteOldImage($activeLicense->license_photo_url);
+                        $license_photo_url = $this->saveImage($licPhotoVal, 'licenses', 'lic_front');
+                    }
+                } else if (!$activeLicense && !empty($licPhotoVal)) {
+                    $license_photo_url = $this->saveImage($licPhotoVal, 'licenses', 'lic_front');
+                }
+                
+                // Back photo change
+                if ($activeLicense && $licPhotoBackVal !== $activeLicense->license_photo_back_url) {
+                    if (empty($licPhotoBackVal)) {
+                        $this->deleteOldImage($activeLicense->license_photo_back_url);
+                        $license_photo_back_url = null;
+                    } else if (str_starts_with($licPhotoBackVal, 'data:image/')) {
+                        $this->deleteOldImage($activeLicense->license_photo_back_url);
+                        $license_photo_back_url = $this->saveImage($licPhotoBackVal, 'licenses', 'lic_back');
+                    }
+                } else if (!$activeLicense && !empty($licPhotoBackVal)) {
+                    $license_photo_back_url = $this->saveImage($licPhotoBackVal, 'licenses', 'lic_back');
+                }
+
                 if ($activeLicense) {
                     $activeLicense->update([
                         'license_number' => $validated['license_number'],
                         'expiration_date' => $validated['expiration_date'],
                         'license_class' => $validated['license_class'],
+                        'license_photo_url' => $license_photo_url,
+                        'license_photo_back_url' => $license_photo_back_url,
                     ]);
                 } else {
                     $activeLicense = StudentLicense::create([
@@ -375,13 +448,20 @@ class StudentController extends Controller
                         'license_number' => $validated['license_number'],
                         'expiration_date' => $validated['expiration_date'],
                         'license_class' => $validated['license_class'],
+                        'license_photo_url' => $license_photo_url,
+                        'license_photo_back_url' => $license_photo_back_url,
                         'is_active' => true,
                     ]);
                 }
             } else {
-                // If license_number was cleared, deactivate active license
                 if ($activeLicense) {
-                    $activeLicense->update(['is_active' => false]);
+                    $this->deleteOldImage($activeLicense->license_photo_url);
+                    $this->deleteOldImage($activeLicense->license_photo_back_url);
+                    $activeLicense->update([
+                        'is_active' => false,
+                        'license_photo_url' => null,
+                        'license_photo_back_url' => null,
+                    ]);
                     $activeLicense = null;
                 }
             }
@@ -415,10 +495,13 @@ class StudentController extends Controller
                     'height' => $student->height,
                     'eye_color' => $student->eye_color,
                     'is_organ_donor' => (bool) $student->is_organ_donor,
+                    'student_photo_url' => $student->student_photo_url,
                     'license' => $activeLicense ? [
                         'license_number' => $activeLicense->license_number,
                         'expiration_date' => $activeLicense->expiration_date,
                         'license_class' => $activeLicense->license_class,
+                        'license_photo_url' => $activeLicense->license_photo_url,
+                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
                     ] : null
                 ]
             ]);
@@ -451,6 +534,53 @@ class StudentController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar estudiante: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function saveImage($base64, $subfolder, $prefix)
+    {
+        if (empty($base64)) {
+            return null;
+        }
+
+        if (str_starts_with($base64, '/uploads/')) {
+            return $base64;
+        }
+
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+            $data = substr($base64, strpos($base64, ',') + 1);
+            $type = strtolower($type[1]); // png, jpg, jpeg, gif, webp
+
+            if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
+                throw new \Exception('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.');
+            }
+
+            $data = base64_decode($data);
+            if ($data === false) {
+                throw new \Exception('Fallo al decodificar la imagen.');
+            }
+
+            $fileName = $prefix . '_' . uniqid() . '.' . $type;
+            $dirPath = public_path('uploads/' . $subfolder);
+            
+            if (!file_exists($dirPath)) {
+                mkdir($dirPath, 0777, true);
+            }
+
+            file_put_contents($dirPath . '/' . $fileName, $data);
+            return '/uploads/' . $subfolder . '/' . $fileName;
+        }
+
+        return null;
+    }
+
+    private function deleteOldImage($url)
+    {
+        if ($url && str_starts_with($url, '/uploads/')) {
+            $path = public_path(ltrim($url, '/'));
+            if (file_exists($path)) {
+                @unlink($path);
+            }
         }
     }
 }
