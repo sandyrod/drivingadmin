@@ -135,8 +135,24 @@ class StudentController extends Controller
             ];
         });
 
+        // Load all payments (abonos)
+        $dbPayments = \App\Models\StudentPayment::with('student')->orderBy('payment_date', 'desc')->get();
+        $payments = $dbPayments->map(function ($p) {
+            return [
+                'id' => 'ABO-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                'db_id' => $p->id,
+                'student_id' => $p->student_id,
+                'student_name' => $p->student ? ($p->student->first_name . ' ' . $p->student->last_name) : 'Estudiante Eliminado',
+                'amount' => (float) $p->amount,
+                'payment_method' => $p->payment_method,
+                'payment_date' => date('Y-m-d', strtotime($p->payment_date)),
+                'remaining_debt' => (float) $p->remaining_debt,
+                'notes' => $p->notes,
+            ];
+        });
+
         // Pass mapping to view
-        return view('driving', compact('students', 'instructors', 'vehicles', 'reviews'));
+        return view('driving', compact('students', 'instructors', 'vehicles', 'reviews', 'payments'));
     }
 
     /**
@@ -535,6 +551,94 @@ class StudentController extends Controller
                 'message' => 'Error al eliminar estudiante: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Store a newly registered student payment (abono).
+     */
+    public function storePayment(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|max:50',
+            'payment_date' => 'required|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $student = Student::findOrFail($validated['student_id']);
+
+            if ($validated['amount'] > $student->debt_amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El monto del abono no puede ser mayor a la deuda pendiente (' . $student->debt_amount . ' USD).'
+                ], 422);
+            }
+
+            // Update student balances
+            $student->paid_amount += $validated['amount'];
+            $student->debt_amount -= $validated['amount'];
+
+            if ($student->debt_amount <= 0) {
+                $student->status = 'al_dia';
+            } else {
+                $student->status = 'active';
+            }
+            $student->save();
+
+            // Create payment record
+            $payment = StudentPayment::create([
+                'student_id' => $student->id,
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'payment_date' => $validated['payment_date'],
+                'remaining_debt' => $student->debt_amount,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'payment' => [
+                    'id' => 'ABO-' . str_pad($payment->id, 4, '0', STR_PAD_LEFT),
+                    'db_id' => $payment->id,
+                    'student_id' => $payment->student_id,
+                    'student_name' => $student->first_name . ' ' . $student->last_name,
+                    'amount' => (float) $payment->amount,
+                    'payment_method' => $payment->payment_method,
+                    'payment_date' => date('Y-m-d', strtotime($payment->payment_date)),
+                    'remaining_debt' => (float) $payment->remaining_debt,
+                    'notes' => $payment->notes,
+                ],
+                'student' => [
+                    'db_id' => $student->id,
+                    'paid' => (float) $student->paid_amount,
+                    'debt' => (float) $student->debt_amount,
+                    'status' => $student->debt_amount > 0 ? 'Activo' : 'Al Día'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error registrando abono: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en el servidor al registrar el abono: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Print/Show receipt in HTML for print dialog.
+     */
+    public function printReceipt($id)
+    {
+        $payment = StudentPayment::with('student')->findOrFail($id);
+        return view('receipt', compact('payment'));
     }
 
     private function saveImage($base64, $subfolder, $prefix)

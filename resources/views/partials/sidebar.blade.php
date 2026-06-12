@@ -31,6 +31,13 @@
                     'label' => 'Inscripción Alumno'
                 ],
                 [
+                    'id' => 'abonos',
+                    'route' => 'abonos',
+                    'path' => 'abonos',
+                    'icon' => 'fa-solid fa-file-invoice-dollar',
+                    'label' => 'Registro de Abonos'
+                ],
+                [
                     'id' => 'registro-instructor',
                     'route' => 'registro-instructor',
                     'path' => 'registro-instructor',

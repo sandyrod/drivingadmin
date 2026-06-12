@@ -16,6 +16,10 @@ Route::put('/students/{id}/payment', [StudentController::class, 'recordPayment']
 Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
 Route::put('/students/{id}', [StudentController::class, 'update'])->name('students.update');
 
+// Student Payments
+Route::post('/payments', [StudentController::class, 'storePayment'])->name('payments.store');
+Route::get('/payments/{id}/receipt', [StudentController::class, 'printReceipt'])->name('payments.receipt');
+
 Route::post('/instructors', [InstructorController::class, 'store'])->name('instructors.store');
 Route::delete('/instructors/{id}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
 Route::put('/instructors/{id}', [InstructorController::class, 'update'])->name('instructors.update');

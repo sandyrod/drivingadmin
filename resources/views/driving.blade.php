@@ -375,6 +375,103 @@
         </form>
     </div>
 
+    <!-- ================= PANELS: REGISTRO DE ABONOS ================= -->
+    <div id="view-abonos" class="hidden max-w-4xl mx-auto space-y-8">
+        <!-- REGISTRO DE ABONO FORM -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-8 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-b border-slate-800">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-500"></i> Registrar Abono Estudiante
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Registra un nuevo cobro, asigna el método de pago y actualiza el saldo del alumno.</p>
+            </div>
+
+            <form id="payment-form" class="p-8 space-y-6" onsubmit="handlePaymentSubmit(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seleccionar Estudiante <span class="text-amber-500">*</span></label>
+                        <select id="pay-student-id" required onchange="handlePaymentStudentChange()"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="">Seleccione un alumno con deuda...</option>
+                            <!-- Dynamically loaded -->
+                        </select>
+                        <p id="pay-student-debt-info" class="text-xs text-slate-400 mt-2 hidden">
+                            Deuda actual: <span class="font-bold text-red-500" id="pay-debt-amount-text">$0 USD</span>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Forma de Pago <span class="text-amber-500">*</span></label>
+                        <select id="pay-method" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="Cash">Efectivo (Cash)</option>
+                            <option value="Credit Card">Tarjeta de Crédito</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Venmo">Venmo</option>
+                            <option value="Check">Cheque (Check)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Monto del Abono ($ USD) <span class="text-amber-500">*</span></label>
+                        <input type="number" id="pay-amount" step="0.01" min="0.01" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm font-bold"
+                            placeholder="Ej. 150.00">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha de Pago <span class="text-amber-500">*</span></label>
+                        <input type="date" id="pay-date" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Notas u Observaciones</label>
+                    <textarea id="pay-notes"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        rows="2" placeholder="Información adicional del abono (opcional)..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 border-t border-slate-800/60 pt-6">
+                    <button type="reset" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-slate-800 hover:bg-slate-800 transition">Limpiar</button>
+                    <button type="submit" id="payment-submit-btn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-receipt"></i> <span>Registrar Abono</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- MOVIMIENTOS / HISTORY TABLE -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
+                <h4 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-list text-emerald-500"></i> Historial de Movimientos (Abonos)
+                </h4>
+                <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-medium" id="movements-count-badge">0 abonos</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="px-4 py-3 border-r border-slate-800">ID Abono</th>
+                            <th class="px-4 py-3 border-r border-slate-800">Estudiante</th>
+                            <th class="px-4 py-3 border-r border-slate-800">Fecha Pago</th>
+                            <th class="px-4 py-3 border-r border-slate-800">Forma de Pago</th>
+                            <th class="px-4 py-3 border-r border-slate-800 text-right">Monto</th>
+                            <th class="px-4 py-3 border-r border-slate-800 text-right">Deuda Restante</th>
+                            <th class="px-4 py-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payment-movements-rows" class="divide-y divide-slate-800/50">
+                        <!-- Dynamic rows loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= PANELS: REGISTRO INSTRUCTOR ================= -->
     <div id="view-registro-instructor" class="hidden max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
         <div class="p-8 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
@@ -748,6 +845,111 @@
         </form>
     </div>
 
+    <!-- ================= PANELS: REGISTRO DE ABONOS ================= -->
+    <div id="view-abonos" class="hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Card -->
+            <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl h-fit">
+                <div class="p-6 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-amber-500"></i>
+                        Registrar Nuevo Abono
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Registra pagos de estudiantes con deuda pendiente.</p>
+                </div>
+                
+                <form id="payment-form" class="p-6 space-y-4" onsubmit="handlePaymentSubmit(event)">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Seleccionar Estudiante <span class="text-amber-500">*</span></label>
+                        <select id="pay-student-id" required onchange="handlePaymentStudentChange()"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                            <option value="">Selecciona un estudiante...</option>
+                        </select>
+                        <p id="pay-student-debt-help" class="text-xs text-slate-400 mt-1.5 hidden">
+                            Costo total: <span id="pay-student-cost-val" class="font-semibold text-slate-200"></span> | 
+                            Abonado: <span id="pay-student-paid-val" class="font-semibold text-emerald-400"></span> | 
+                            Deuda: <span id="pay-student-debt-val" class="font-semibold text-red-400"></span>
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Monto a Abonar <span class="text-amber-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 text-slate-500 text-sm">$</span>
+                                <input type="number" id="pay-amount" step="0.01" min="0.01" required
+                                    class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm placeholder-slate-600"
+                                    placeholder="0.00">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Forma de Pago <span class="text-amber-500">*</span></label>
+                            <select id="pay-method" required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                                <option value="Cash">Efectivo</option>
+                                <option value="Credit Card">Tarjeta de Crédito</option>
+                                <option value="Zelle">Zelle</option>
+                                <option value="Venmo">Venmo</option>
+                                <option value="Check">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha del Abono <span class="text-amber-500">*</span></label>
+                        <input type="date" id="pay-date" required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Notas / Concepto</label>
+                        <textarea id="pay-notes" rows="2"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm placeholder-slate-600"
+                            placeholder="Notas adicionales sobre el pago..."></textarea>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-amber-500/10">
+                        <i class="fa-solid fa-save"></i>
+                        Registrar Abono
+                    </button>
+                </form>
+            </div>
+
+            <!-- History Card -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-gradient-to-r from-slate-900 to-slate-950">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
+                            Historial de Movimientos
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Lista de todos los abonos registrados en el sistema.</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-950/40">
+                            <tr>
+                                <th class="px-6 py-4">ID</th>
+                                <th class="px-6 py-4">Estudiante</th>
+                                <th class="px-6 py-4">Fecha</th>
+                                <th class="px-6 py-4">Método</th>
+                                <th class="px-6 py-4 text-right">Monto</th>
+                                <th class="px-6 py-4 text-right">Deuda Restante</th>
+                                <th class="px-6 py-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-movements-rows" class="divide-y divide-slate-800/50">
+                            <!-- Dynamic row items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= PANELS: SIMULADOR GOOGLE SHEETS ================= -->
     <div id="view-sheets-db" class="hidden space-y-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900 p-4 border border-slate-800 rounded-2xl">
@@ -770,6 +972,8 @@
                     class="sheet-tab px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-100">📁 Vehículos</button>
                 <button onclick="switchSheetTab('reviews')" id="sheet-btn-reviews"
                     class="sheet-tab px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-100">📁 Encuestas Recibidas</button>
+                <button onclick="switchSheetTab('payments')" id="sheet-btn-payments"
+                    class="sheet-tab px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-100">📁 Historial Abonos</button>
             </div>
         </div>
 
@@ -867,6 +1071,8 @@
 
         let reviews = @json($reviews);
 
+        let payments = @json($payments);
+
         // Active Sheet Tab indicator
         let activeSheetTab = 'students';
 
@@ -937,6 +1143,7 @@
             // Hide all views
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-inscripcion').classList.add('hidden');
+            document.getElementById('view-abonos').classList.add('hidden');
             document.getElementById('view-registro-instructor').classList.add('hidden');
             document.getElementById('view-registro-vehiculo').classList.add('hidden');
             document.getElementById('view-encuesta').classList.add('hidden');
@@ -969,6 +1176,23 @@
                     clearUpload(null, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64');
                     clearUpload(null, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64');
                 }
+            } else if (tabId === 'abonos') {
+                sectionPre.innerText = "Control de Caja";
+                sectionTitle.innerText = "Registro de Abonos";
+                
+                // Populate students with debt > 0
+                populatePaymentStudentsDropdown();
+                
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('pay-date').value = today;
+                
+                // Reset form
+                document.getElementById('payment-form').reset();
+                document.getElementById('pay-student-debt-help').classList.add('hidden');
+                
+                // Render movements table
+                renderPaymentsTable();
             } else if (tabId === 'registro-instructor') {
                 sectionPre.innerText = "Instructores";
                 sectionTitle.innerText = "Registrar Instructor";
@@ -1096,49 +1320,22 @@
         function simulateCobro(studentId) {
             const student = students.find(s => s.id === studentId);
             if (student) {
-                const amount = prompt(`¿Cuánto va a abonar ${student.name}? (Deuda actual: $${student.debt}):`, student.debt);
-                if (amount === null) return; // Cancelled
-
-                const parsed = parseFloat(amount);
-                if (isNaN(parsed) || parsed <= 0 || parsed > student.debt) {
-                    showToast("Por favor introduce un monto de abono válido.", "warning");
-                    return;
+                // Switch to Abonos tab
+                switchTab('abonos');
+                
+                // Select student in dropdown
+                const select = document.getElementById('pay-student-id');
+                if (select) {
+                    select.value = student.db_id;
+                    // Trigger change to load helper text
+                    handlePaymentStudentChange();
                 }
-
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-                fetch(`/students/${student.db_id}/payment`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({ amount: parsed })
-                })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        student.paid = res.paid;
-                        student.debt = res.debt;
-                        student.status = res.status;
-
-                        showToast(`Se registró abono de $${parsed} USD en la BD para ${student.name}`, "success");
-
-                        // Log Apps Script console
-                        const log = document.getElementById('console-logs');
-                        log.innerHTML += `<p class="text-amber-500">[DB_TRIGGER] Cobro registrado en BD: ${student.name} pagó $${parsed}. Deuda restante: $${student.debt}</p>`;
-
-                        updateDashboardMetrics();
-                        renderSheetTable();
-                    } else {
-                        showToast("Error al registrar pago en BD: " + (res.message || ""), "warning");
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    showToast("Error al realizar abono en el servidor.", "warning");
-                });
+                
+                // Focus amount input
+                setTimeout(() => {
+                    const amountInput = document.getElementById('pay-amount');
+                    if (amountInput) amountInput.focus();
+                }, 100);
             }
         }
 
@@ -1862,6 +2059,36 @@
                     `;
                     tableBody.appendChild(row);
                 });
+            } else if (activeSheetTab === 'payments') {
+                tableHead.innerHTML = `
+                    <tr>
+                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
+                        <th class="px-4 py-3 border-r border-slate-800">B - Estudiante</th>
+                        <th class="px-4 py-3 border-r border-slate-800">C - Fecha Pago</th>
+                        <th class="px-4 py-3 border-r border-slate-800">D - Método Pago</th>
+                        <th class="px-4 py-3 border-r border-slate-800">E - Monto</th>
+                        <th class="px-4 py-3 border-r border-slate-800">F - Deuda Restante</th>
+                        <th class="px-4 py-3">G - Notas</th>
+                    </tr>
+                `;
+                payments.forEach(p => {
+                    const row = document.createElement('tr');
+                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
+                    row.innerHTML = `
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${p.id}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${p.student_name}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${p.payment_date}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">
+                            ${p.payment_method === 'Cash' ? 'Efectivo' : 
+                              p.payment_method === 'Credit Card' ? 'Tarjeta de Crédito' : 
+                              p.payment_method}
+                        </td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">$${p.amount.toFixed(2)}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">$${p.remaining_debt.toFixed(2)}</td>
+                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${p.notes || '-'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
             }
         }
 
@@ -2142,11 +2369,201 @@
             switchTab('registro-vehiculo');
         }
 
+        function populatePaymentStudentsDropdown() {
+            const dropdown = document.getElementById('pay-student-id');
+            if (dropdown) {
+                dropdown.innerHTML = '<option value="">Selecciona un estudiante...</option>';
+                // Sort students alphabetically by name for better UX
+                const sortedStudents = [...students].sort((a, b) => a.name.localeCompare(b.name));
+                sortedStudents.forEach(s => {
+                    if (s.debt > 0) {
+                        const opt = document.createElement('option');
+                        opt.value = s.db_id;
+                        opt.innerText = `${s.name} (${s.id}) - Deuda: $${s.debt}`;
+                        dropdown.appendChild(opt);
+                    }
+                });
+            }
+        }
+
+        function handlePaymentStudentChange() {
+            const studentId = document.getElementById('pay-student-id').value;
+            const helpBlock = document.getElementById('pay-student-debt-help');
+            
+            if (!studentId) {
+                if (helpBlock) helpBlock.classList.add('hidden');
+                return;
+            }
+
+            const student = students.find(s => s.db_id == studentId);
+            if (student) {
+                document.getElementById('pay-student-cost-val').innerText = `$${student.cost} USD`;
+                document.getElementById('pay-student-paid-val').innerText = `$${student.paid} USD`;
+                document.getElementById('pay-student-debt-val').innerText = `$${student.debt} USD`;
+                
+                // Set default max value for payment amount
+                const amountInput = document.getElementById('pay-amount');
+                if (amountInput) {
+                    amountInput.max = student.debt;
+                    amountInput.placeholder = `Máx: ${student.debt}`;
+                }
+                
+                if (helpBlock) helpBlock.classList.remove('hidden');
+            } else {
+                if (helpBlock) helpBlock.classList.add('hidden');
+            }
+        }
+
+        function renderPaymentsTable() {
+            const tableBody = document.getElementById('payment-movements-rows');
+            if (!tableBody) return;
+
+            tableBody.innerHTML = '';
+
+            if (payments.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-xs text-slate-500">No hay movimientos de abonos registrados</td></tr>`;
+                return;
+            }
+
+            payments.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-amber-500 font-bold font-mono">${p.id}</td>
+                    <td class="px-6 py-4 font-semibold text-slate-200">${p.student_name}</td>
+                    <td class="px-6 py-4 text-slate-400 font-mono text-xs">${p.payment_date}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">
+                            ${p.payment_method === 'Cash' ? 'Efectivo' : 
+                              p.payment_method === 'Credit Card' ? 'Tarjeta de Crédito' : 
+                              p.payment_method}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-extrabold text-emerald-400 font-mono">$${p.amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold font-mono text-slate-400">$${p.remaining_debt.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="printReceipt(${p.db_id})" 
+                            class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 p-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 mx-auto" 
+                            title="Imprimir Recibo PDF">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Recibo</span>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function printReceipt(paymentDbId) {
+            window.open(`/payments/${paymentDbId}/receipt`, '_blank');
+        }
+
+        function handlePaymentSubmit(e) {
+            e.preventDefault();
+
+            const student_id = document.getElementById('pay-student-id').value;
+            const amount = parseFloat(document.getElementById('pay-amount').value);
+            const payment_method = document.getElementById('pay-method').value;
+            const payment_date = document.getElementById('pay-date').value;
+            const notes = document.getElementById('pay-notes').value;
+
+            if (!student_id) {
+                showToast("Por favor selecciona un estudiante.", "warning");
+                return;
+            }
+
+            const student = students.find(s => s.db_id == student_id);
+            if (!student) return;
+
+            if (amount <= 0) {
+                showToast("El monto del abono debe ser mayor a cero.", "warning");
+                return;
+            }
+
+            if (amount > student.debt) {
+                showToast(`El monto no puede superar la deuda del estudiante ($${student.debt} USD).`, "warning");
+                return;
+            }
+
+            const data = {
+                student_id: parseInt(student_id),
+                amount: amount,
+                payment_method: payment_method,
+                payment_date: payment_date,
+                notes: notes
+            };
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Send fetch request
+            fetch('/payments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const newPayment = res.payment;
+                    const updatedStudent = res.student;
+
+                    // Add to payments array (at the beginning to keep sort order desc)
+                    payments.unshift(newPayment);
+
+                    // Update student in local list
+                    const idx = students.findIndex(s => s.db_id === updatedStudent.db_id);
+                    if (idx !== -1) {
+                        students[idx].paid = updatedStudent.paid;
+                        students[idx].debt = updatedStudent.debt;
+                        students[idx].status = updatedStudent.status;
+                    }
+
+                    showToast(`¡Abono registrado con éxito! Folio: ${newPayment.id}`, "success");
+
+                    // Logs Simulator Console
+                    const consoleLogs = document.getElementById('console-logs');
+                    consoleLogs.innerHTML += `
+                        <p class="text-green-400">[DB_SUCCESS] Event: PaymentSubmit (Registro de Abono)</p>
+                        <p class="text-slate-300">↳ Inserted Payment ID: ${newPayment.db_id} [Folio: ${newPayment.id}]</p>
+                        <p class="text-slate-400">↳ Recibo de pago generado exitosamente.</p>
+                        <p class="text-emerald-400">↳ Saldo actualizado del alumno: $${updatedStudent.debt} USD</p>
+                        <p class="text-slate-500">----------------------------------------------------</p>
+                    `;
+
+                    // Reset form and UI
+                    document.getElementById('payment-form').reset();
+                    document.getElementById('pay-student-debt-help').classList.add('hidden');
+                    
+                    // Repopulate dropdown, update metrics, render sheets, render payments
+                    populatePaymentStudentsDropdown();
+                    updateDashboardMetrics();
+                    renderSheetTable();
+                    renderPaymentsTable();
+
+                    // Print PDF Receipt automatically in new tab
+                    setTimeout(() => {
+                        printReceipt(newPayment.db_id);
+                    }, 500);
+                } else {
+                    showToast("Error de validación: " + (res.message || "Campos incompletos."), "warning");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Error de red o de servidor al registrar abono.", "warning");
+            });
+        }
+
         window.onload = function () {
             updateDashboardMetrics();
             populateInstructorDropdown();
             populateVehicleDropdown();
             renderSheetTable();
+            renderPaymentsTable();
 
             // Set up form reset listeners
             document.getElementById('student-form').addEventListener('reset', () => {

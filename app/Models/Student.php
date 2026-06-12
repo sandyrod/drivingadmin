@@ -54,4 +54,12 @@ class Student extends Model
     {
         return $this->hasOne(StudentLicense::class)->where('is_active', true);
     }
+
+    /**
+     * Get the payments for the student.
+     */
+    public function payments()
+    {
+        return $this->hasMany(StudentPayment::class)->orderBy('payment_date', 'desc');
+    }
 }
