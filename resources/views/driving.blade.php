@@ -1429,7 +1429,7 @@
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            const url = editingStudentId ? `/students/${editingStudentId}` : '/students';
+            const url = editingStudentId ? `{{ url('students') }}/${editingStudentId}` : '{{ url('students') }}';
             const method = editingStudentId ? 'PUT' : 'POST';
 
             // Send AJAX Request
@@ -1566,7 +1566,7 @@
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            const url = editingInstructorId ? `/instructors/${editingInstructorId}` : '/instructors';
+            const url = editingInstructorId ? `{{ url('instructors') }}/${editingInstructorId}` : '{{ url('instructors') }}';
             const method = editingInstructorId ? 'PUT' : 'POST';
 
             // Send AJAX Request
@@ -1644,7 +1644,7 @@
 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                fetch(`/instructors/${instructor.db_id}`, {
+                fetch(`{{ url('instructors') }}/${instructor.db_id}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -1696,7 +1696,7 @@
 
             const data = { brand, plate, transmission };
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const url = editingVehicleId ? `/vehicles/${editingVehicleId}` : '/vehicles';
+            const url = editingVehicleId ? `{{ url('vehicles') }}/${editingVehicleId}` : '{{ url('vehicles') }}';
             const method = editingVehicleId ? 'PUT' : 'POST';
 
             fetch(url, {
@@ -1766,7 +1766,7 @@
 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                fetch(`/vehicles/${vehicle.db_id}`, {
+                fetch(`{{ url('vehicles') }}/${vehicle.db_id}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -1850,7 +1850,7 @@
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            fetch('/reviews', {
+            fetch('{{ url('reviews') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2099,7 +2099,7 @@
 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                fetch(`/students/${student.db_id}`, {
+                fetch(`{{ url('students') }}/${student.db_id}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -2455,7 +2455,7 @@
         }
 
         function printReceipt(paymentDbId) {
-            window.open(`/payments/${paymentDbId}/receipt`, '_blank');
+            window.open(`{{ url('payments') }}/${paymentDbId}/receipt`, '_blank');
         }
 
         function handlePaymentSubmit(e) {
@@ -2496,7 +2496,7 @@
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             // Send fetch request
-            fetch('/payments', {
+            fetch('{{ url('payments') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
