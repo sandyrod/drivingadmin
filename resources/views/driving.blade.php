@@ -831,7 +831,14 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">4. ¿Tienes alguna queja, observación o sugerencia?</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">4. Tu nombre <span class="normal-case font-normal text-slate-500">(opcional, se mostrará en la web si se publica tu reseña)</span></label>
+                <input type="text" id="srv-author" maxlength="100"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                    placeholder="Ej: María G.">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">5. ¿Tienes alguna queja, observación o sugerencia?</label>
                 <textarea id="srv-comment"
                     class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
                     rows="3" placeholder="Por favor detalla cualquier observación aquí..."></textarea>
@@ -1830,6 +1837,7 @@
             const rating = parseInt(document.getElementById('srv-rating').value);
             const vehRating = parseInt(document.getElementById('srv-vehicle-rating').value);
             const comment = document.getElementById('srv-comment').value;
+            const authorName = document.getElementById('srv-author').value.trim();
 
             if (!instructorId) {
                 showToast("Por favor selecciona un instructor.", "warning");
@@ -1843,6 +1851,7 @@
 
             const data = {
                 instructor_id: instructorId,
+                author_name: authorName || null,
                 rating: rating,
                 vehicle_rating: vehRating,
                 comment: comment
@@ -1897,6 +1906,33 @@
             .catch(err => {
                 console.error(err);
                 showToast("Error al enviar la evaluación al servidor.", "warning");
+            });
+        }
+
+        function toggleReviewVisibility(dbId) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch(`{{ url('reviews') }}/${dbId}/visibility`, {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const review = reviews.find(r => r.db_id === dbId);
+                    if (review) review.is_public = res.is_public;
+                    renderSheetTable();
+                    showToast(res.is_public ? "Reseña publicada en la web." : "Reseña ocultada de la web.", "success");
+                } else {
+                    showToast("Error al cambiar la visibilidad: " + (res.message || ""), "warning");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Error al cambiar la visibilidad de la reseña.", "warning");
             });
         }
 
@@ -2044,7 +2080,9 @@
                         <th class="px-4 py-3 border-r border-slate-800">B - Instructor Evaluado</th>
                         <th class="px-4 py-3 border-r border-slate-800">C - Calificación Trato</th>
                         <th class="px-4 py-3 border-r border-slate-800">D - Calificación Auto</th>
-                        <th class="px-4 py-3">E - Comentarios Alumno</th>
+                        <th class="px-4 py-3 border-r border-slate-800">E - Comentarios Alumno</th>
+                        <th class="px-4 py-3 border-r border-slate-800">F - Autor</th>
+                        <th class="px-4 py-3 text-center">G - Publicada en Web</th>
                     </tr>
                 `;
                 reviews.forEach(r => {
@@ -2055,7 +2093,14 @@
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${r.instructor}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-400 font-bold">${'★'.repeat(r.rating)} (${r.rating}/5)</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-400 font-bold">${'★'.repeat(r.vehicleRating)} (${r.vehicleRating}/5)</td>
-                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${r.comment}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300 italic truncate max-w-xs">${r.comment}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300">${r.author_name || '<span class="text-slate-500">Anónimo</span>'}</td>
+                        <td class="px-4 py-2.5 text-center">
+                            <button onclick="toggleReviewVisibility(${r.db_id})" title="${r.is_public ? 'Ocultar de la web' : 'Publicar en la web'}"
+                                class="${r.is_public ? 'bg-green-500/10 text-green-400 hover:bg-green-500' : 'bg-slate-800 text-slate-400 hover:bg-amber-500'} hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition">
+                                <i class="fa-solid ${r.is_public ? 'fa-eye' : 'fa-eye-slash'}"></i> ${r.is_public ? 'Pública' : 'Oculta'}
+                            </button>
+                        </td>
                     `;
                     tableBody.appendChild(row);
                 });

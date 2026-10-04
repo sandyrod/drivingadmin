@@ -124,17 +124,7 @@ class StudentController extends Controller
 
         // Load all reviews (evaluations)
         $dbReviews = \App\Models\Review::with('instructorModel')->get();
-        $reviews = $dbReviews->map(function ($r) {
-            return [
-                'id' => 'REV-' . str_pad($r->id, 3, '0', STR_PAD_LEFT),
-                'db_id' => $r->id,
-                'instructor' => $r->instructorModel ? ($r->instructorModel->first_name . ' ' . $r->instructorModel->last_name) : 'Instructor Eliminado',
-                'instructor_id' => $r->instructor_id,
-                'rating' => (int) $r->rating,
-                'vehicleRating' => (int) $r->vehicle_rating,
-                'comment' => $r->comment,
-            ];
-        });
+        $reviews = $dbReviews->map(fn ($r) => \App\Http\Controllers\ReviewController::toDashboardArray($r));
 
         // Load all payments (abonos)
         $dbPayments = \App\Models\StudentPayment::with('student')->orderBy('payment_date', 'desc')->get();

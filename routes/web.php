@@ -29,6 +29,7 @@ Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy'])->name('ve
 Route::put('/vehicles/{id}', [VehicleController::class, 'update'])->name('vehicles.update');
 
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::put('/reviews/{id}/visibility', [ReviewController::class, 'toggleVisibility'])->name('reviews.visibility');
 
 Route::get('/test-design', function () {
     return view('test-design');
