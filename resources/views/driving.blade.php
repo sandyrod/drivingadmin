@@ -458,25 +458,20 @@
                 </h4>
                 <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-medium" id="movements-count-badge">0 abonos</span>
             </div>
+
+            <div id="payment-movements-toolbar" class="mb-4"></div>
             
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                        <tr>
-                            <th class="px-4 py-3 border-r border-slate-800">ID Abono</th>
-                            <th class="px-4 py-3 border-r border-slate-800">Estudiante</th>
-                            <th class="px-4 py-3 border-r border-slate-800">Fecha Pago</th>
-                            <th class="px-4 py-3 border-r border-slate-800">Forma de Pago</th>
-                            <th class="px-4 py-3 border-r border-slate-800 text-right">Monto</th>
-                            <th class="px-4 py-3 border-r border-slate-800 text-right">Deuda Restante</th>
-                            <th class="px-4 py-3 text-center">Acciones</th>
-                        </tr>
+                    <thead id="payment-movements-head" class="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <!-- Encabezados generados por renderPaymentsTable() -->
                     </thead>
                     <tbody id="payment-movements-rows" class="divide-y divide-slate-800/50">
                         <!-- Dynamic rows loaded here -->
                     </tbody>
                 </table>
             </div>
+            <div id="payment-movements-pager" class="mt-4"></div>
         </div>
     </div>
 
@@ -1001,6 +996,9 @@
                 <span class="text-xs text-slate-400 ml-2 font-mono">https://docs.google.com/spreadsheets/d/1A-m...</span>
             </div>
 
+            <!-- Búsqueda, filtros y registros por página -->
+            <div id="sheet-table-toolbar" class="px-4 py-3 border-b border-slate-800"></div>
+
             <!-- TABLE VIEWPORT FOR SHEET TABS -->
             <div class="overflow-x-auto">
                 <table class="w-full text-xs text-left font-mono whitespace-nowrap">
@@ -1012,6 +1010,9 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginador -->
+            <div id="sheet-table-pager" class="px-4 py-3 border-t border-slate-800"></div>
         </div>
     </div>
 
@@ -1958,45 +1959,304 @@
             renderSheetTable();
         }
 
-        function renderSheetTable() {
-            const tableHead = document.getElementById('sheet-table-head');
-            const tableBody = document.getElementById('sheet-table-body');
+        // ================= TABLAS: búsqueda, filtros, orden y paginación (lado cliente) =================
+        const DATA_TABLE_PAGE_SIZES = [25, 50, 100, 0]; // 0 = todos
+        const DATA_TABLE_INPUT = 'bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 transition';
+        const dataTableStates = {};
+        const dataTableConfigs = {};
 
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '';
+        function getDataTableState(key) {
+            if (!dataTableStates[key]) {
+                dataTableStates[key] = { page: 1, pageSize: 50, search: '', sortCol: null, sortDir: 'asc', filters: {}, dateFrom: '', dateTo: '' };
+            }
+            return dataTableStates[key];
+        }
 
-            if (activeSheetTab === 'students') {
-                tableHead.innerHTML = `
-                    <tr>
-                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Contrato</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Fecha Reg</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Estudiante</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Teléfono</th>
-                        <th class="px-4 py-3 border-r border-slate-800">F - Plan</th>
-                        <th class="px-4 py-3 border-r border-slate-800">G - Costo</th>
-                        <th class="px-4 py-3 border-r border-slate-800">H - Abonado</th>
-                        <th class="px-4 py-3 border-r border-slate-800">I - Deuda</th>
-                        <th class="px-4 py-3 border-r border-slate-800">J - Transmisión</th>
-                        <th class="px-4 py-3 border-r border-slate-800">K - Estatus</th>
-                        <th class="px-4 py-3">Acción</th>
-                    </tr>
-                `;
-                students.forEach(s => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
-                    row.innerHTML = `
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${s.id}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300">${s.contract_number || '—'}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.date}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${s.name}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.phone}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.plan}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">$${s.cost}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">$${s.paid}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 font-bold ${s.debt > 0 ? 'text-red-500' : 'text-green-500'}">$${s.debt}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.transmission}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40">
+        function normalizeText(value) {
+            return String(value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        }
+
+        function isEmptyValue(v) {
+            return v === null || v === undefined || v === '';
+        }
+
+        function escapeAttr(v) {
+            return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function compareTableValues(a, b, dir) {
+            // Los vacíos van siempre al final, sin importar la dirección
+            if (isEmptyValue(a) || isEmptyValue(b)) return isEmptyValue(a) - isEmptyValue(b);
+            const result = (typeof a === 'number' && typeof b === 'number')
+                ? a - b
+                : String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' });
+            return dir === 'desc' ? -result : result;
+        }
+
+        function getDataTableRows(cfg, state) {
+            let rows = cfg.rows().slice();
+
+            const terms = normalizeText(state.search).split(/\s+/).filter(Boolean);
+            if (terms.length) {
+                rows = rows.filter(r => {
+                    const haystack = normalizeText([
+                        ...cfg.columns.filter(c => c.value).map(c => c.value(r)),
+                        ...(cfg.searchExtra ? cfg.searchExtra(r) : [])
+                    ].join(' '));
+                    return terms.every(t => haystack.includes(t));
+                });
+            }
+
+            (cfg.filters || []).forEach(f => {
+                const selected = state.filters[f.id];
+                if (!isEmptyValue(selected)) rows = rows.filter(r => String(f.value(r) ?? '') === selected);
+            });
+
+            if (cfg.dateField) {
+                if (state.dateFrom) rows = rows.filter(r => (cfg.dateField(r) || '') >= state.dateFrom);
+                if (state.dateTo) rows = rows.filter(r => (cfg.dateField(r) || '') <= state.dateTo);
+            }
+
+            const sortCol = state.sortCol !== null ? cfg.columns[state.sortCol] : null;
+            if (sortCol && sortCol.value) {
+                const getter = sortCol.sortValue || sortCol.value;
+                rows.sort((a, b) => compareTableValues(getter(a), getter(b), state.sortDir));
+            }
+            return rows;
+        }
+
+        function renderDataTable(cfg, rebuildToolbar = true) {
+            dataTableConfigs[cfg.key] = cfg;
+            const state = getDataTableState(cfg.key);
+            const head = document.getElementById(cfg.headId);
+            const body = document.getElementById(cfg.bodyId);
+            if (!head || !body) return;
+
+            if (rebuildToolbar) renderDataTableToolbar(cfg, state);
+
+            head.innerHTML = '<tr>' + cfg.columns.map((c, i) => {
+                const cls = c.thClass ?? cfg.thClass ?? '';
+                if (!c.value) return `<th class="${cls}">${c.label}</th>`;
+                const active = state.sortCol === i;
+                const icon = active ? (state.sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort';
+                return `<th class="${cls} cursor-pointer select-none hover:text-slate-100" onclick="sortDataTable('${cfg.key}', ${i})" title="Ordenar por ${escapeAttr(c.label)}">`
+                    + `${c.label} <i class="fa-solid ${icon} ml-1 ${active ? 'text-amber-500' : 'opacity-30'}"></i></th>`;
+            }).join('') + '</tr>';
+
+            const rows = getDataTableRows(cfg, state);
+            const total = rows.length;
+            const pageSize = state.pageSize || total || 1;
+            const pages = Math.max(1, Math.ceil(total / pageSize));
+            state.page = Math.min(Math.max(1, state.page), pages);
+            const start = (state.page - 1) * pageSize;
+            const pageRows = rows.slice(start, start + pageSize);
+
+            body.innerHTML = '';
+            if (total === 0) {
+                const hasCriteria = state.search || state.dateFrom || state.dateTo || Object.values(state.filters).some(v => v);
+                const msg = hasCriteria ? 'No hay registros que coincidan con la búsqueda o los filtros.' : (cfg.emptyText || 'No hay registros.');
+                body.innerHTML = `<tr><td colspan="${cfg.columns.length}" class="px-6 py-6 text-center text-xs text-slate-500">${msg}</td></tr>`;
+            } else {
+                pageRows.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.className = cfg.rowClass || '';
+                    tr.innerHTML = cfg.row(r);
+                    body.appendChild(tr);
+                });
+            }
+
+            renderDataTablePager(cfg, state, total, start, pageRows.length, pages);
+            if (cfg.afterRender) cfg.afterRender(total);
+        }
+
+        function renderDataTableToolbar(cfg, state) {
+            const el = document.getElementById(cfg.toolbarId);
+            if (!el) return;
+            const allRows = cfg.rows();
+
+            const filtersHtml = (cfg.filters || []).map(f => {
+                const options = [...new Set(allRows.map(r => f.value(r)).filter(v => !isEmptyValue(v)).map(String))]
+                    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+                const current = state.filters[f.id] || '';
+                if (current && !options.includes(current)) options.push(current);
+                return `<select class="${DATA_TABLE_INPUT}" onchange="setDataTableFilter('${cfg.key}', '${f.id}', this.value)" title="Filtrar por ${escapeAttr(f.label)}">
+                        <option value="">${f.label}: Todos</option>
+                        ${options.map(o => `<option value="${escapeAttr(o)}" ${o === current ? 'selected' : ''}>${escapeAttr(f.format ? f.format(o) : o)}</option>`).join('')}
+                    </select>`;
+            }).join('');
+
+            const dateHtml = cfg.dateField ? `
+                    <label class="flex items-center gap-1 text-[11px] text-slate-400">Desde
+                        <input type="date" class="${DATA_TABLE_INPUT}" value="${state.dateFrom}" onchange="setDataTableDate('${cfg.key}', 'dateFrom', this.value)">
+                    </label>
+                    <label class="flex items-center gap-1 text-[11px] text-slate-400">Hasta
+                        <input type="date" class="${DATA_TABLE_INPUT}" value="${state.dateTo}" onchange="setDataTableDate('${cfg.key}', 'dateTo', this.value)">
+                    </label>` : '';
+
+            el.innerHTML = `
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="search" class="${DATA_TABLE_INPUT} w-full pl-8" placeholder="${escapeAttr(cfg.searchPlaceholder || 'Buscar...')}"
+                            value="${escapeAttr(state.search)}" oninput="setDataTableSearch('${cfg.key}', this.value)">
+                    </div>
+                    ${filtersHtml}
+                    ${dateHtml}
+                    <select class="${DATA_TABLE_INPUT}" onchange="setDataTablePageSize('${cfg.key}', this.value)" title="Registros por página">
+                        ${DATA_TABLE_PAGE_SIZES.map(n => `<option value="${n}" ${n === state.pageSize ? 'selected' : ''}>${n === 0 ? 'Todos' : n + ' por página'}</option>`).join('')}
+                    </select>
+                    <button type="button" onclick="resetDataTable('${cfg.key}')" title="Limpiar búsqueda, filtros y orden"
+                        class="px-3 py-2 rounded-lg text-xs font-bold border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+                        <i class="fa-solid fa-filter-circle-xmark"></i> Limpiar
+                    </button>
+                </div>`;
+        }
+
+        function renderDataTablePager(cfg, state, total, start, count, pages) {
+            const el = document.getElementById(cfg.pagerId);
+            if (!el) return;
+
+            const info = total === 0 ? '0 registros' : `Mostrando ${start + 1}–${start + count} de ${total} registros`;
+            const btn = (label, page, disabled, active = false) => `<button type="button" ${disabled ? 'disabled' : `onclick="goToDataTablePage('${cfg.key}', ${page})"`}
+                class="min-w-[2rem] px-2 py-1 rounded text-xs font-bold transition ${active ? 'bg-amber-500 text-slate-950' : disabled ? 'text-slate-700 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}">${label}</button>`;
+            const dots = '<span class="px-1 text-slate-600">…</span>';
+
+            const nums = [];
+            const from = Math.max(1, state.page - 2);
+            const to = Math.min(pages, state.page + 2);
+            if (from > 1) { nums.push(btn('1', 1, false)); if (from > 2) nums.push(dots); }
+            for (let p = from; p <= to; p++) nums.push(btn(String(p), p, false, p === state.page));
+            if (to < pages) { if (to < pages - 1) nums.push(dots); nums.push(btn(String(pages), pages, false)); }
+
+            el.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs text-slate-500">${info}</span>
+                    <div class="flex items-center gap-1">
+                        ${btn('<i class="fa-solid fa-angles-left"></i>', 1, state.page === 1)}
+                        ${btn('<i class="fa-solid fa-angle-left"></i>', state.page - 1, state.page === 1)}
+                        ${nums.join('')}
+                        ${btn('<i class="fa-solid fa-angle-right"></i>', state.page + 1, state.page === pages)}
+                        ${btn('<i class="fa-solid fa-angles-right"></i>', pages, state.page === pages)}
+                    </div>
+                </div>`;
+        }
+
+        function refreshDataTable(key, rebuildToolbar = false) {
+            const cfg = dataTableConfigs[key];
+            if (cfg) renderDataTable(cfg, rebuildToolbar);
+        }
+
+        function setDataTableSearch(key, value) {
+            const s = getDataTableState(key);
+            s.search = value;
+            s.page = 1;
+            refreshDataTable(key);
+        }
+
+        function setDataTableFilter(key, filterId, value) {
+            const s = getDataTableState(key);
+            s.filters[filterId] = value;
+            s.page = 1;
+            refreshDataTable(key);
+        }
+
+        function setDataTableDate(key, field, value) {
+            const s = getDataTableState(key);
+            s[field] = value;
+            s.page = 1;
+            refreshDataTable(key);
+        }
+
+        function setDataTablePageSize(key, value) {
+            const s = getDataTableState(key);
+            s.pageSize = parseInt(value, 10) || 0;
+            s.page = 1;
+            refreshDataTable(key);
+        }
+
+        function sortDataTable(key, colIndex) {
+            // Ciclo: ascendente → descendente → sin orden
+            const s = getDataTableState(key);
+            if (s.sortCol === colIndex) {
+                if (s.sortDir === 'asc') {
+                    s.sortDir = 'desc';
+                } else {
+                    s.sortCol = null;
+                    s.sortDir = 'asc';
+                }
+            } else {
+                s.sortCol = colIndex;
+                s.sortDir = 'asc';
+            }
+            refreshDataTable(key);
+        }
+
+        function goToDataTablePage(key, page) {
+            getDataTableState(key).page = page;
+            refreshDataTable(key);
+        }
+
+        function resetDataTable(key) {
+            delete dataTableStates[key];
+            refreshDataTable(key, true);
+        }
+
+        function paymentMethodLabel(method) {
+            return method === 'Cash' ? 'Efectivo' : method === 'Credit Card' ? 'Tarjeta de Crédito' : method;
+        }
+
+        // ---------- Configuración de cada pestaña de la hoja ----------
+        const SHEET_TH = 'px-4 py-3 border-r border-slate-800';
+        const SHEET_TD = 'px-4 py-2.5 border-r border-slate-800/40';
+
+        function getSheetTableConfig(tab) {
+            const base = {
+                key: `sheet-${tab}`,
+                headId: 'sheet-table-head',
+                bodyId: 'sheet-table-body',
+                toolbarId: 'sheet-table-toolbar',
+                pagerId: 'sheet-table-pager',
+                thClass: SHEET_TH,
+                rowClass: 'border-b border-slate-800/20 hover:bg-slate-800/30',
+            };
+
+            if (tab === 'students') return {
+                ...base,
+                rows: () => students,
+                emptyText: 'No hay estudiantes registrados.',
+                searchPlaceholder: 'Buscar por nombre, contrato, teléfono, email o permiso...',
+                searchExtra: s => [s.email, s.middle_name, s.city, s.license ? s.license.license_number : ''],
+                filters: [
+                    { id: 'plan', label: 'Plan', value: s => s.plan },
+                    { id: 'status', label: 'Estatus', value: s => s.status },
+                    { id: 'transmission', label: 'Transmisión', value: s => s.transmission },
+                ],
+                columns: [
+                    { label: 'A - ID', value: s => s.id, sortValue: s => s.db_id },
+                    { label: 'B - Contrato', value: s => s.contract_number },
+                    { label: 'C - Fecha Reg', value: s => s.date },
+                    { label: 'D - Estudiante', value: s => s.name },
+                    { label: 'E - Teléfono', value: s => s.phone },
+                    { label: 'F - Plan', value: s => s.plan },
+                    { label: 'G - Costo', value: s => s.cost },
+                    { label: 'H - Abonado', value: s => s.paid },
+                    { label: 'I - Deuda', value: s => s.debt },
+                    { label: 'J - Transmisión', value: s => s.transmission },
+                    { label: 'K - Estatus', value: s => s.status },
+                    { label: 'Acción', thClass: 'px-4 py-3' },
+                ],
+                row: s => `
+                        <td class="${SHEET_TD} text-amber-500 font-bold">${s.id}</td>
+                        <td class="${SHEET_TD} text-slate-300">${s.contract_number || '—'}</td>
+                        <td class="${SHEET_TD} text-slate-400">${s.date}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${s.name}</td>
+                        <td class="${SHEET_TD} text-slate-400">${s.phone}</td>
+                        <td class="${SHEET_TD} text-slate-400">${s.plan}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">$${s.cost}</td>
+                        <td class="${SHEET_TD} text-slate-400">$${s.paid}</td>
+                        <td class="${SHEET_TD} font-bold ${s.debt > 0 ? 'text-red-500' : 'text-green-500'}">$${s.debt}</td>
+                        <td class="${SHEET_TD} text-slate-400">${s.transmission}</td>
+                        <td class="${SHEET_TD}">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === 'Al Día' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-500'}">${s.status}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1">
@@ -2006,37 +2266,40 @@
                             <button onclick="deleteStudent('${s.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
+                        </td>`,
+            };
 
-            } else if (activeSheetTab === 'instructors') {
-                tableHead.innerHTML = `
-                    <tr>
-                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Nombre Instructor</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Licencia Certificado</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Teléfono</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Auto Asignado</th>
-                        <th class="px-4 py-3 border-r border-slate-800">F - Placa</th>
-                        <th class="px-4 py-3 border-r border-slate-800">G - Turno Horario</th>
-                        <th class="px-4 py-3 border-r border-slate-800">H - Estatus</th>
-                        <th class="px-4 py-3">Acción</th>
-                    </tr>
-                `;
-                instructors.forEach(ins => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
-                    row.innerHTML = `
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${ins.id}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${ins.name}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.license_text || ins.license}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.phone}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.vehicle}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">${ins.plate}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${ins.shift}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40">
+            if (tab === 'instructors') return {
+                ...base,
+                rows: () => instructors,
+                emptyText: 'No hay instructores registrados.',
+                searchPlaceholder: 'Buscar por nombre, licencia, teléfono, auto o placa...',
+                searchExtra: ins => [ins.email],
+                filters: [
+                    { id: 'status', label: 'Estatus', value: ins => ins.status },
+                    { id: 'shift', label: 'Turno', value: ins => ins.shift },
+                    { id: 'vehicle', label: 'Auto', value: ins => ins.vehicle },
+                ],
+                columns: [
+                    { label: 'A - ID', value: ins => ins.id, sortValue: ins => ins.db_id },
+                    { label: 'B - Nombre Instructor', value: ins => ins.name },
+                    { label: 'C - Licencia Certificado', value: ins => ins.license_text || ins.license },
+                    { label: 'D - Teléfono', value: ins => ins.phone },
+                    { label: 'E - Auto Asignado', value: ins => ins.vehicle },
+                    { label: 'F - Placa', value: ins => ins.plate },
+                    { label: 'G - Turno Horario', value: ins => ins.shift },
+                    { label: 'H - Estatus', value: ins => ins.status },
+                    { label: 'Acción', thClass: 'px-4 py-3' },
+                ],
+                row: ins => `
+                        <td class="${SHEET_TD} text-amber-500 font-bold">${ins.id}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${ins.name}</td>
+                        <td class="${SHEET_TD} text-slate-400">${ins.license_text || ins.license}</td>
+                        <td class="${SHEET_TD} text-slate-400">${ins.phone}</td>
+                        <td class="${SHEET_TD} text-slate-400">${ins.vehicle}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">${ins.plate}</td>
+                        <td class="${SHEET_TD} text-slate-400">${ins.shift}</td>
+                        <td class="${SHEET_TD}">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${ins.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${ins.status}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1">
@@ -2046,31 +2309,32 @@
                             <button onclick="deleteInstructor('${ins.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
+                        </td>`,
+            };
 
-            } else if (activeSheetTab === 'vehicles') {
-                tableHead.innerHTML = `
-                    <tr>
-                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Marca / Modelo</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Placa Patente</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Transmisión</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Estatus Operación</th>
-                        <th class="px-4 py-3">Acción</th>
-                    </tr>
-                `;
-                vehicles.forEach(v => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
-                    row.innerHTML = `
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${v.id}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${v.brand}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">${v.plate}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${v.transmission}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40">
+            if (tab === 'vehicles') return {
+                ...base,
+                rows: () => vehicles,
+                emptyText: 'No hay vehículos registrados.',
+                searchPlaceholder: 'Buscar por marca, modelo o placa...',
+                filters: [
+                    { id: 'transmission', label: 'Transmisión', value: v => v.transmission },
+                    { id: 'status', label: 'Estatus', value: v => v.status },
+                ],
+                columns: [
+                    { label: 'A - ID', value: v => v.id, sortValue: v => v.db_id },
+                    { label: 'B - Marca / Modelo', value: v => v.brand },
+                    { label: 'C - Placa Patente', value: v => v.plate },
+                    { label: 'D - Transmisión', value: v => v.transmission },
+                    { label: 'E - Estatus Operación', value: v => v.status },
+                    { label: 'Acción', thClass: 'px-4 py-3' },
+                ],
+                row: v => `
+                        <td class="${SHEET_TD} text-amber-500 font-bold">${v.id}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${v.brand}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">${v.plate}</td>
+                        <td class="${SHEET_TD} text-slate-400">${v.transmission}</td>
+                        <td class="${SHEET_TD}">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${v.status}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1">
@@ -2080,73 +2344,76 @@
                             <button onclick="deleteVehicle('${v.id}')" class="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
+                        </td>`,
+            };
 
-            } else if (activeSheetTab === 'reviews') {
-                tableHead.innerHTML = `
-                    <tr>
-                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Instructor Evaluado</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Calificación Trato</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Calificación Auto</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Comentarios Alumno</th>
-                        <th class="px-4 py-3 border-r border-slate-800">F - Autor</th>
-                        <th class="px-4 py-3 text-center">G - Publicada en Web</th>
-                    </tr>
-                `;
-                reviews.forEach(r => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
-                    row.innerHTML = `
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${r.id}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${r.instructor}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-400 font-bold">${'★'.repeat(r.rating)} (${r.rating}/5)</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-400 font-bold">${'★'.repeat(r.vehicleRating)} (${r.vehicleRating}/5)</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300 italic truncate max-w-xs">${r.comment}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300">${r.author_name || '<span class="text-slate-500">Anónimo</span>'}</td>
+            if (tab === 'reviews') return {
+                ...base,
+                rows: () => reviews,
+                emptyText: 'No hay encuestas recibidas.',
+                searchPlaceholder: 'Buscar por instructor, comentario o autor...',
+                filters: [
+                    { id: 'instructor', label: 'Instructor', value: r => r.instructor },
+                    { id: 'rating', label: 'Trato', value: r => r.rating, format: o => `${o} ★` },
+                    { id: 'vehicleRating', label: 'Auto', value: r => r.vehicleRating, format: o => `${o} ★` },
+                    { id: 'public', label: 'Web', value: r => r.is_public ? 'Pública' : 'Oculta' },
+                ],
+                columns: [
+                    { label: 'A - ID', value: r => r.id, sortValue: r => r.db_id },
+                    { label: 'B - Instructor Evaluado', value: r => r.instructor },
+                    { label: 'C - Calificación Trato', value: r => r.rating },
+                    { label: 'D - Calificación Auto', value: r => r.vehicleRating },
+                    { label: 'E - Comentarios Alumno', value: r => r.comment },
+                    { label: 'F - Autor', value: r => r.author_name },
+                    { label: 'G - Publicada en Web', value: r => r.is_public ? 'Pública' : 'Oculta', thClass: 'px-4 py-3 text-center' },
+                ],
+                row: r => `
+                        <td class="${SHEET_TD} text-amber-500 font-bold">${r.id}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${r.instructor}</td>
+                        <td class="${SHEET_TD} text-amber-400 font-bold">${'★'.repeat(r.rating)} (${r.rating}/5)</td>
+                        <td class="${SHEET_TD} text-amber-400 font-bold">${'★'.repeat(r.vehicleRating)} (${r.vehicleRating}/5)</td>
+                        <td class="${SHEET_TD} text-slate-300 italic truncate max-w-xs">${r.comment}</td>
+                        <td class="${SHEET_TD} text-slate-300">${r.author_name || '<span class="text-slate-500">Anónimo</span>'}</td>
                         <td class="px-4 py-2.5 text-center">
                             <button onclick="toggleReviewVisibility(${r.db_id})" title="${r.is_public ? 'Ocultar de la web' : 'Publicar en la web'}"
                                 class="${r.is_public ? 'bg-green-500/10 text-green-400 hover:bg-green-500' : 'bg-slate-800 text-slate-400 hover:bg-amber-500'} hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition">
                                 <i class="fa-solid ${r.is_public ? 'fa-eye' : 'fa-eye-slash'}"></i> ${r.is_public ? 'Pública' : 'Oculta'}
                             </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            } else if (activeSheetTab === 'payments') {
-                tableHead.innerHTML = `
-                    <tr>
-                        <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Estudiante</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Fecha Pago</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Método Pago</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Monto</th>
-                        <th class="px-4 py-3 border-r border-slate-800">F - Deuda Restante</th>
-                        <th class="px-4 py-3">G - Notas</th>
-                    </tr>
-                `;
-                payments.forEach(p => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
-                    row.innerHTML = `
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${p.id}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${p.student_name}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${p.payment_date}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">
-                            ${p.payment_method === 'Cash' ? 'Efectivo' : 
-                              p.payment_method === 'Credit Card' ? 'Tarjeta de Crédito' : 
-                              p.payment_method}
-                        </td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">$${p.amount.toFixed(2)}</td>
-                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400 font-bold">$${p.remaining_debt.toFixed(2)}</td>
-                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${p.notes || '-'}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
+                        </td>`,
+            };
+
+            // payments
+            return {
+                ...base,
+                rows: () => payments,
+                emptyText: 'No hay abonos registrados.',
+                searchPlaceholder: 'Buscar por ID, estudiante, método o notas...',
+                dateField: p => p.payment_date,
+                filters: [
+                    { id: 'method', label: 'Método', value: p => p.payment_method, format: paymentMethodLabel },
+                ],
+                columns: [
+                    { label: 'A - ID', value: p => p.id, sortValue: p => p.db_id },
+                    { label: 'B - Estudiante', value: p => p.student_name },
+                    { label: 'C - Fecha Pago', value: p => p.payment_date },
+                    { label: 'D - Método Pago', value: p => paymentMethodLabel(p.payment_method) },
+                    { label: 'E - Monto', value: p => p.amount },
+                    { label: 'F - Deuda Restante', value: p => p.remaining_debt },
+                    { label: 'G - Notas', value: p => p.notes, thClass: 'px-4 py-3' },
+                ],
+                row: p => `
+                        <td class="${SHEET_TD} text-amber-500 font-bold">${p.id}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${p.student_name}</td>
+                        <td class="${SHEET_TD} text-slate-400">${p.payment_date}</td>
+                        <td class="${SHEET_TD} text-slate-400">${paymentMethodLabel(p.payment_method)}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">$${p.amount.toFixed(2)}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">$${p.remaining_debt.toFixed(2)}</td>
+                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${p.notes || '-'}</td>`,
+            };
+        }
+
+        function renderSheetTable() {
+            renderDataTable(getSheetTableConfig(activeSheetTab));
         }
 
         function deleteStudent(studentId) {
@@ -2473,42 +2740,53 @@
         }
 
         function renderPaymentsTable() {
-            const tableBody = document.getElementById('payment-movements-rows');
-            if (!tableBody) return;
-
-            tableBody.innerHTML = '';
-
-            if (payments.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-xs text-slate-500">No hay movimientos de abonos registrados</td></tr>`;
-                return;
-            }
-
-            payments.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150";
-                tr.innerHTML = `
+            const th = 'px-4 py-3 border-r border-slate-800';
+            renderDataTable({
+                key: 'payments-history',
+                headId: 'payment-movements-head',
+                bodyId: 'payment-movements-rows',
+                toolbarId: 'payment-movements-toolbar',
+                pagerId: 'payment-movements-pager',
+                thClass: th,
+                rowClass: 'border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150',
+                rows: () => payments,
+                emptyText: 'No hay movimientos de abonos registrados',
+                searchPlaceholder: 'Buscar por ID, estudiante, método o notas...',
+                searchExtra: p => [p.notes],
+                dateField: p => p.payment_date,
+                filters: [
+                    { id: 'method', label: 'Forma de Pago', value: p => p.payment_method, format: paymentMethodLabel },
+                ],
+                columns: [
+                    { label: 'ID Abono', value: p => p.id, sortValue: p => p.db_id },
+                    { label: 'Estudiante', value: p => p.student_name },
+                    { label: 'Fecha Pago', value: p => p.payment_date },
+                    { label: 'Forma de Pago', value: p => paymentMethodLabel(p.payment_method) },
+                    { label: 'Monto', value: p => p.amount, thClass: `${th} text-right` },
+                    { label: 'Deuda Restante', value: p => p.remaining_debt, thClass: `${th} text-right` },
+                    { label: 'Acciones', thClass: 'px-4 py-3 text-center' },
+                ],
+                row: p => `
                     <td class="px-6 py-4 text-amber-500 font-bold font-mono">${p.id}</td>
                     <td class="px-6 py-4 font-semibold text-slate-200">${p.student_name}</td>
                     <td class="px-6 py-4 text-slate-400 font-mono text-xs">${p.payment_date}</td>
                     <td class="px-6 py-4">
-                        <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">
-                            ${p.payment_method === 'Cash' ? 'Efectivo' : 
-                              p.payment_method === 'Credit Card' ? 'Tarjeta de Crédito' : 
-                              p.payment_method}
-                        </span>
+                        <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">${paymentMethodLabel(p.payment_method)}</span>
                     </td>
                     <td class="px-6 py-4 text-right font-extrabold text-emerald-400 font-mono">$${p.amount.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right font-bold font-mono text-slate-400">$${p.remaining_debt.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center">
-                        <button onclick="printReceipt(${p.db_id})" 
-                            class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 p-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 mx-auto" 
+                        <button onclick="printReceipt(${p.db_id})"
+                            class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 p-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 mx-auto"
                             title="Imprimir Recibo PDF">
                             <i class="fa-solid fa-print"></i>
                             <span>Recibo</span>
                         </button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
+                    </td>`,
+                afterRender: () => {
+                    const badge = document.getElementById('movements-count-badge');
+                    if (badge) badge.textContent = `${payments.length} abonos`;
+                },
             });
         }
 
