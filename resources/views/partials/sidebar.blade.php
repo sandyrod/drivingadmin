@@ -109,6 +109,29 @@
         @endforeach
     </nav>
 
+    <!-- Logged-in user + logout -->
+    @auth
+        <div class="px-4 pt-4 border-t border-slate-800">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-9 h-9 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-sm shrink-0">
+                    {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-slate-100 truncate">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-slate-500 truncate">{{ auth()->user()->email }}</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                @csrf
+                <button type="submit"
+                    class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-red-500 transition">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    <span>Cerrar sesión</span>
+                </button>
+            </form>
+        </div>
+    @endauth
+
     <!-- Footer Information -->
     <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
         <p>Demo Técnico - Fase 1</p>

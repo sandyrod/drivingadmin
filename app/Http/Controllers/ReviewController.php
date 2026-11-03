@@ -53,7 +53,7 @@ class ReviewController extends Controller
             Log::error('Error registrando calificación: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -77,7 +77,7 @@ class ReviewController extends Controller
             Log::error('Error cambiando visibilidad de calificación: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }

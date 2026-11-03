@@ -1291,8 +1291,8 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150";
                     tr.innerHTML = `
-                        <td class="py-3.5 font-semibold text-slate-200">${s.name}${s.contract_number ? `<span class="block text-[10px] font-normal text-slate-500">Contrato ${s.contract_number}</span>` : ''}</td>
-                        <td class="py-3.5 text-xs text-slate-400">${s.plan}</td>
+                        <td class="py-3.5 font-semibold text-slate-200">${esc(s.name)}${s.contract_number ? `<span class="block text-[10px] font-normal text-slate-500">Contrato ${esc(s.contract_number)}</span>` : ''}</td>
+                        <td class="py-3.5 text-xs text-slate-400">${esc(s.plan)}</td>
                         <td class="py-3.5 text-right font-bold text-red-500">$${s.debt}</td>
                         <td class="py-3.5 text-center">
                             <button onclick="simulateCobro('${s.id}')" class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 px-2.5 py-1 rounded text-xs font-bold transition">Abonar</button>
@@ -1320,12 +1320,12 @@
                     card.className = "bg-red-500/10 border border-red-500/20 p-4 rounded-xl space-y-2 relative";
                     card.innerHTML = `
                         <div class="flex items-center justify-between">
-                            <h5 class="text-xs font-bold text-slate-200">Instructor: ${r.instructor}</h5>
+                            <h5 class="text-xs font-bold text-slate-200">Instructor: ${esc(r.instructor)}</h5>
                             <span class="text-xs text-red-400 font-bold">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
                         </div>
-                        <p class="text-xs text-slate-300 italic">"${r.comment}"</p>
+                        <p class="text-xs text-slate-300 italic">"${esc(r.comment)}"</p>
                         <div class="flex justify-end gap-2 pt-1">
-                            <button onclick="simulateCallInstructor('${r.instructor}')" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded font-bold transition">Contactar Instructor</button>
+                            <button data-name="${esc(r.instructor)}" onclick="simulateCallInstructor(this.dataset.name)" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded font-bold transition">Contactar Instructor</button>
                         </div>
                     `;
                     alertContainer.appendChild(card);
@@ -1488,9 +1488,9 @@
                         consoleLogs.innerHTML += `
                             <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Inscripción de Alumnos)</p>
                             <p class="text-slate-300">↳ Inserted DB Record ID: ${student.db_id} [Student ID: ${student.id}]</p>
-                            <p class="text-cyan-400">↳ Triggering 'generarFacturaPDF()' para ${student.name}...</p>
-                            <p class="text-slate-400">↳ File 'Factura_${student.id}_${student.name.replace(/ /g, "_")}.pdf' creado en Drive/Facturas</p>
-                            <p class="text-emerald-400">↳ Notificación automatizada enviada a ${student.phone}</p>
+                            <p class="text-cyan-400">↳ Triggering 'generarFacturaPDF()' para ${esc(student.name)}...</p>
+                            <p class="text-slate-400">↳ File 'Factura_${esc(student.id)}_${esc(student.name.replace(/ /g, "_"))}.pdf' creado en Drive/Facturas</p>
+                            <p class="text-emerald-400">↳ Notificación automatizada enviada a ${esc(student.phone)}</p>
                             <p class="text-slate-500">----------------------------------------------------</p>
                         `;
                     }
@@ -1625,7 +1625,7 @@
                         consoleLogs.innerHTML += `
                             <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Registro de Instructores)</p>
                             <p class="text-slate-300">↳ Inserted DB Record ID: ${instructor.db_id} [Instructor ID: ${instructor.id}]</p>
-                            <p class="text-emerald-400">↳ Instructor asignado al turno: ${instructor.shift}</p>
+                            <p class="text-emerald-400">↳ Instructor asignado al turno: ${esc(instructor.shift)}</p>
                             <p class="text-slate-500">----------------------------------------------------</p>
                         `;
                     }
@@ -1892,7 +1892,7 @@
                     consoleLogs.innerHTML += `
                         <p class="text-green-400">[DB_SUCCESS] Event: FormSubmit (Encuesta Calidad - Guardado en BD)</p>
                         <p class="text-slate-300">↳ Row added in 'reviews' table. Calificación: ${rating}/5</p>
-                        ${rating <= 2 ? `<p class="text-red-500">↳ ALERT [CRITICAL RATING]: Correo de alerta de calidad enviado a Gerencia. Instructor implicado: ${review.instructor}</p>` : ''}
+                        ${rating <= 2 ? `<p class="text-red-500">↳ ALERT [CRITICAL RATING]: Correo de alerta de calidad enviado a Gerencia. Instructor implicado: ${esc(review.instructor)}</p>` : ''}
                         <p class="text-slate-500">----------------------------------------------------</p>
                     `;
 
@@ -1981,7 +1981,12 @@
         }
 
         function escapeAttr(v) {
-            return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // Escape any user-provided value before inserting it into HTML
+        function esc(v) {
+            return escapeAttr(v);
         }
 
         function compareTableValues(a, b, dir) {
@@ -2247,15 +2252,15 @@
                 ],
                 row: s => `
                         <td class="${SHEET_TD} text-amber-500 font-bold">${s.id}</td>
-                        <td class="${SHEET_TD} text-slate-300">${s.contract_number || '—'}</td>
-                        <td class="${SHEET_TD} text-slate-400">${s.date}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${s.name}</td>
-                        <td class="${SHEET_TD} text-slate-400">${s.phone}</td>
-                        <td class="${SHEET_TD} text-slate-400">${s.plan}</td>
+                        <td class="${SHEET_TD} text-slate-300">${esc(s.contract_number || '—')}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(s.date)}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(s.name)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(s.phone)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(s.plan)}</td>
                         <td class="${SHEET_TD} text-slate-400 font-bold">$${s.cost}</td>
                         <td class="${SHEET_TD} text-slate-400">$${s.paid}</td>
                         <td class="${SHEET_TD} font-bold ${s.debt > 0 ? 'text-red-500' : 'text-green-500'}">$${s.debt}</td>
-                        <td class="${SHEET_TD} text-slate-400">${s.transmission}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(s.transmission)}</td>
                         <td class="${SHEET_TD}">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === 'Al Día' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-500'}">${s.status}</span>
                         </td>
@@ -2293,14 +2298,14 @@
                 ],
                 row: ins => `
                         <td class="${SHEET_TD} text-amber-500 font-bold">${ins.id}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${ins.name}</td>
-                        <td class="${SHEET_TD} text-slate-400">${ins.license_text || ins.license}</td>
-                        <td class="${SHEET_TD} text-slate-400">${ins.phone}</td>
-                        <td class="${SHEET_TD} text-slate-400">${ins.vehicle}</td>
-                        <td class="${SHEET_TD} text-slate-400 font-bold">${ins.plate}</td>
-                        <td class="${SHEET_TD} text-slate-400">${ins.shift}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(ins.name)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(ins.license_text || ins.license)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(ins.phone)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(ins.vehicle)}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">${esc(ins.plate)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(ins.shift)}</td>
                         <td class="${SHEET_TD}">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${ins.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${ins.status}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${ins.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${esc(ins.status)}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1">
                             <button onclick="editInstructor('${ins.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
@@ -2331,11 +2336,11 @@
                 ],
                 row: v => `
                         <td class="${SHEET_TD} text-amber-500 font-bold">${v.id}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${v.brand}</td>
-                        <td class="${SHEET_TD} text-slate-400 font-bold">${v.plate}</td>
-                        <td class="${SHEET_TD} text-slate-400">${v.transmission}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(v.brand)}</td>
+                        <td class="${SHEET_TD} text-slate-400 font-bold">${esc(v.plate)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(v.transmission)}</td>
                         <td class="${SHEET_TD}">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${v.status}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${esc(v.status)}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1">
                             <button onclick="editVehicle('${v.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
@@ -2369,11 +2374,11 @@
                 ],
                 row: r => `
                         <td class="${SHEET_TD} text-amber-500 font-bold">${r.id}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${r.instructor}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(r.instructor)}</td>
                         <td class="${SHEET_TD} text-amber-400 font-bold">${'★'.repeat(r.rating)} (${r.rating}/5)</td>
                         <td class="${SHEET_TD} text-amber-400 font-bold">${'★'.repeat(r.vehicleRating)} (${r.vehicleRating}/5)</td>
-                        <td class="${SHEET_TD} text-slate-300 italic truncate max-w-xs">${r.comment}</td>
-                        <td class="${SHEET_TD} text-slate-300">${r.author_name || '<span class="text-slate-500">Anónimo</span>'}</td>
+                        <td class="${SHEET_TD} text-slate-300 italic truncate max-w-xs">${esc(r.comment)}</td>
+                        <td class="${SHEET_TD} text-slate-300">${r.author_name ? esc(r.author_name) : '<span class="text-slate-500">Anónimo</span>'}</td>
                         <td class="px-4 py-2.5 text-center">
                             <button onclick="toggleReviewVisibility(${r.db_id})" title="${r.is_public ? 'Ocultar de la web' : 'Publicar en la web'}"
                                 class="${r.is_public ? 'bg-green-500/10 text-green-400 hover:bg-green-500' : 'bg-slate-800 text-slate-400 hover:bg-amber-500'} hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition">
@@ -2403,12 +2408,12 @@
                 ],
                 row: p => `
                         <td class="${SHEET_TD} text-amber-500 font-bold">${p.id}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${p.student_name}</td>
-                        <td class="${SHEET_TD} text-slate-400">${p.payment_date}</td>
-                        <td class="${SHEET_TD} text-slate-400">${paymentMethodLabel(p.payment_method)}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(p.student_name)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(p.payment_date)}</td>
+                        <td class="${SHEET_TD} text-slate-400">${esc(paymentMethodLabel(p.payment_method))}</td>
                         <td class="${SHEET_TD} text-slate-400 font-bold">$${p.amount.toFixed(2)}</td>
                         <td class="${SHEET_TD} text-slate-400 font-bold">$${p.remaining_debt.toFixed(2)}</td>
-                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${p.notes || '-'}</td>`,
+                        <td class="px-4 py-2.5 text-slate-300 italic truncate max-w-xs">${esc(p.notes || '-')}</td>`,
             };
         }
 
@@ -2768,10 +2773,10 @@
                 ],
                 row: p => `
                     <td class="px-6 py-4 text-amber-500 font-bold font-mono">${p.id}</td>
-                    <td class="px-6 py-4 font-semibold text-slate-200">${p.student_name}</td>
-                    <td class="px-6 py-4 text-slate-400 font-mono text-xs">${p.payment_date}</td>
+                    <td class="px-6 py-4 font-semibold text-slate-200">${esc(p.student_name)}</td>
+                    <td class="px-6 py-4 text-slate-400 font-mono text-xs">${esc(p.payment_date)}</td>
                     <td class="px-6 py-4">
-                        <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">${paymentMethodLabel(p.payment_method)}</span>
+                        <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium">${esc(paymentMethodLabel(p.payment_method))}</span>
                     </td>
                     <td class="px-6 py-4 text-right font-extrabold text-emerald-400 font-mono">$${p.amount.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right font-bold font-mono text-slate-400">$${p.remaining_debt.toFixed(2)}</td>

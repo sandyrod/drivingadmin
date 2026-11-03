@@ -43,7 +43,7 @@ class VehicleController extends Controller
             Log::error('Error registrando vehículo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -84,7 +84,7 @@ class VehicleController extends Controller
             Log::error('Error actualizando vehículo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -105,7 +105,7 @@ class VehicleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar vehículo: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }

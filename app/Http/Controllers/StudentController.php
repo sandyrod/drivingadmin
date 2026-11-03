@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\StudentLicense;
 use App\Models\StudentPayment;
+use App\Support\ImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -169,9 +170,9 @@ class StudentController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
-            'student_photo' => 'nullable|string',
-            'license_photo' => 'nullable|string',
-            'license_photo_back' => 'nullable|string',
+            'student_photo' => ImageUploads::RULE,
+            'license_photo' => ImageUploads::RULE,
+            'license_photo_back' => ImageUploads::RULE,
 
             // Enrollment details
             'package' => 'required|string|max:100',
@@ -282,7 +283,7 @@ class StudentController extends Controller
             Log::error('Error registrando estudiante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -300,6 +301,16 @@ class StudentController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Re-read with a row lock so two simultaneous payments can't overdraw the debt
+            $student = Student::lockForUpdate()->findOrFail($id);
+            if ($validated['amount'] > $student->debt_amount) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El monto del abono no puede ser mayor a la deuda pendiente.'
+                ], 422);
+            }
 
             $amount = $validated['amount'];
             $student->paid_amount += $amount;
@@ -324,7 +335,7 @@ class StudentController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar abono: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -353,9 +364,9 @@ class StudentController extends Controller
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
-            'student_photo' => 'nullable|string',
-            'license_photo' => 'nullable|string',
-            'license_photo_back' => 'nullable|string',
+            'student_photo' => ImageUploads::RULE,
+            'license_photo' => ImageUploads::RULE,
+            'license_photo_back' => ImageUploads::RULE,
 
             // Enrollment details
             'package' => 'required|string|max:100',
@@ -525,7 +536,7 @@ class StudentController extends Controller
             Log::error('Error actualizando estudiante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error en el servidor: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -546,7 +557,7 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar estudiante: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -567,9 +578,10 @@ class StudentController extends Controller
         try {
             DB::beginTransaction();
 
-            $student = Student::findOrFail($validated['student_id']);
+            $student = Student::lockForUpdate()->findOrFail($validated['student_id']);
 
             if ($validated['amount'] > $student->debt_amount) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'El monto del abono no puede ser mayor a la deuda pendiente (' . $student->debt_amount . ' USD).'
@@ -625,7 +637,7 @@ class StudentController extends Controller
             Log::error('Error registrando abono: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error en el servidor al registrar el abono: ' . $e->getMessage()
+                'message' => $this->errorMessage($e)
             ], 500);
         }
     }
@@ -641,48 +653,11 @@ class StudentController extends Controller
 
     private function saveImage($base64, $subfolder, $prefix)
     {
-        if (empty($base64)) {
-            return null;
-        }
-
-        if (str_starts_with($base64, '/uploads/')) {
-            return $base64;
-        }
-
-        if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
-            $data = substr($base64, strpos($base64, ',') + 1);
-            $type = strtolower($type[1]); // png, jpg, jpeg, gif, webp
-
-            if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
-                throw new \Exception('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.');
-            }
-
-            $data = base64_decode($data);
-            if ($data === false) {
-                throw new \Exception('Fallo al decodificar la imagen.');
-            }
-
-            $fileName = $prefix . '_' . uniqid() . '.' . $type;
-            $dirPath = public_path('uploads/' . $subfolder);
-            
-            if (!file_exists($dirPath)) {
-                mkdir($dirPath, 0777, true);
-            }
-
-            file_put_contents($dirPath . '/' . $fileName, $data);
-            return '/uploads/' . $subfolder . '/' . $fileName;
-        }
-
-        return null;
+        return ImageUploads::store($base64, $subfolder, $prefix);
     }
 
     private function deleteOldImage($url)
     {
-        if ($url && str_starts_with($url, '/uploads/')) {
-            $path = public_path(ltrim($url, '/'));
-            if (file_exists($path)) {
-                @unlink($path);
-            }
-        }
+        ImageUploads::delete($url);
     }
 }
