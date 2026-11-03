@@ -1,13 +1,13 @@
 <aside class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
     <!-- Brand / Logo Section -->
-    <div class="p-6 border-b border-slate-800">
+    <div class="sidebar-brand p-6 border-b border-slate-800">
         <div class="flex items-center gap-3">
-            <div class="bg-amber-500 text-slate-950 p-2.5 rounded-lg font-black tracking-tighter text-xl flex items-center justify-center">
+            <div class="brand-logo bg-amber-500 text-slate-950 p-2.5 rounded-lg font-black tracking-tighter text-xl flex items-center justify-center">
                 NYDS
             </div>
             <div>
-                <h1 class="font-extrabold text-sm uppercase tracking-wider text-amber-500">NY Driving</h1>
-                <p class="text-xs text-slate-400">School & Academy</p>
+                <h1 class="brand-name font-extrabold text-sm uppercase tracking-wider text-amber-500">NY Driving</h1>
+                <p class="brand-sub text-xs text-slate-400">School & Academy</p>
             </div>
         </div>
     </div>
