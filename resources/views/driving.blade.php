@@ -101,6 +101,14 @@
             <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Estudiante</h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">N° de Contrato</label>
+                    <input type="text" id="stu-contract-number" maxlength="30"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
+                        placeholder="Ej. 8293">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
                     <input type="text" id="stu-last-name" required
                         class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
@@ -1282,7 +1290,7 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150";
                     tr.innerHTML = `
-                        <td class="py-3.5 font-semibold text-slate-200">${s.name}</td>
+                        <td class="py-3.5 font-semibold text-slate-200">${s.name}${s.contract_number ? `<span class="block text-[10px] font-normal text-slate-500">Contrato ${s.contract_number}</span>` : ''}</td>
                         <td class="py-3.5 text-xs text-slate-400">${s.plan}</td>
                         <td class="py-3.5 text-right font-bold text-red-500">$${s.debt}</td>
                         <td class="py-3.5 text-center">
@@ -1372,6 +1380,7 @@
             e.preventDefault();
 
             // Collect variables
+            const contract_number = document.getElementById('stu-contract-number').value.trim();
             const first_name = document.getElementById('stu-first-name').value;
             const middle_name = document.getElementById('stu-middle-name').value;
             const last_name = document.getElementById('stu-last-name').value;
@@ -1427,6 +1436,7 @@
                 student_photo,
                 license_photo,
                 license_photo_back,
+                contract_number,
                 package: plan,
                 transmission: trans,
                 plan_cost: cost,
@@ -1959,15 +1969,16 @@
                 tableHead.innerHTML = `
                     <tr>
                         <th class="px-4 py-3 border-r border-slate-800">A - ID</th>
-                        <th class="px-4 py-3 border-r border-slate-800">B - Fecha Reg</th>
-                        <th class="px-4 py-3 border-r border-slate-800">C - Estudiante</th>
-                        <th class="px-4 py-3 border-r border-slate-800">D - Teléfono</th>
-                        <th class="px-4 py-3 border-r border-slate-800">E - Plan</th>
-                        <th class="px-4 py-3 border-r border-slate-800">F - Costo</th>
-                        <th class="px-4 py-3 border-r border-slate-800">G - Abonado</th>
-                        <th class="px-4 py-3 border-r border-slate-800">H - Deuda</th>
-                        <th class="px-4 py-3 border-r border-slate-800">I - Transmisión</th>
-                        <th class="px-4 py-3 border-r border-slate-800">J - Estatus</th>
+                        <th class="px-4 py-3 border-r border-slate-800">B - Contrato</th>
+                        <th class="px-4 py-3 border-r border-slate-800">C - Fecha Reg</th>
+                        <th class="px-4 py-3 border-r border-slate-800">D - Estudiante</th>
+                        <th class="px-4 py-3 border-r border-slate-800">E - Teléfono</th>
+                        <th class="px-4 py-3 border-r border-slate-800">F - Plan</th>
+                        <th class="px-4 py-3 border-r border-slate-800">G - Costo</th>
+                        <th class="px-4 py-3 border-r border-slate-800">H - Abonado</th>
+                        <th class="px-4 py-3 border-r border-slate-800">I - Deuda</th>
+                        <th class="px-4 py-3 border-r border-slate-800">J - Transmisión</th>
+                        <th class="px-4 py-3 border-r border-slate-800">K - Estatus</th>
                         <th class="px-4 py-3">Acción</th>
                     </tr>
                 `;
@@ -1976,6 +1987,7 @@
                     row.className = "border-b border-slate-800/20 hover:bg-slate-800/30";
                     row.innerHTML = `
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-amber-500 font-bold">${s.id}</td>
+                        <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-300">${s.contract_number || '—'}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.date}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-100 font-semibold">${s.name}</td>
                         <td class="px-4 py-2.5 border-r border-slate-800/40 text-slate-400">${s.phone}</td>
@@ -2222,6 +2234,7 @@
             editingStudentId = student.db_id;
 
             // Pre-fill form fields
+            document.getElementById('stu-contract-number').value = student.contract_number || '';
             document.getElementById('stu-first-name').value = student.first_name || '';
             document.getElementById('stu-middle-name').value = student.middle_name || '';
             document.getElementById('stu-last-name').value = student.last_name || '';

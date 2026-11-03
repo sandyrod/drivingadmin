@@ -42,6 +42,7 @@ class StudentController extends Controller
                 'zip_code' => $s->zip_code,
                 'phone' => $s->phone,
                 'email' => $s->email,
+                'contract_number' => $s->contract_number,
                 'plan' => $s->package,
                 'cost' => (float) $s->plan_cost,
                 'paid' => (float) $s->paid_amount,
@@ -164,6 +165,7 @@ class StudentController extends Controller
             'zip_code' => 'required|string|max:20',
             'phone' => 'required|string|max:30',
             'email' => 'required|email|unique:students,email',
+            'contract_number' => 'nullable|string|max:30|unique:students,contract_number',
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
@@ -192,6 +194,7 @@ class StudentController extends Controller
 
             // Create student
             $student = Student::create([
+                'contract_number' => $validated['contract_number'] ?? null,
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'] ?? null,
                 'last_name' => $validated['last_name'],
@@ -253,6 +256,7 @@ class StudentController extends Controller
                     'zip_code' => $student->zip_code,
                     'phone' => $student->phone,
                     'email' => $student->email,
+                    'contract_number' => $student->contract_number,
                     'plan' => $student->package,
                     'cost' => (float) $student->plan_cost,
                     'paid' => (float) $student->paid_amount,
@@ -345,6 +349,7 @@ class StudentController extends Controller
             'zip_code' => 'required|string|max:20',
             'phone' => 'required|string|max:30',
             'email' => 'required|email|unique:students,email,' . $id,
+            'contract_number' => 'nullable|string|max:30|unique:students,contract_number,' . $id,
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
             'is_organ_donor' => 'boolean',
@@ -383,6 +388,7 @@ class StudentController extends Controller
             }
 
             $student->update([
+                'contract_number' => $validated['contract_number'] ?? null,
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'] ?? null,
                 'last_name' => $validated['last_name'],
@@ -493,6 +499,7 @@ class StudentController extends Controller
                     'zip_code' => $student->zip_code,
                     'phone' => $student->phone,
                     'email' => $student->email,
+                    'contract_number' => $student->contract_number,
                     'plan' => $student->package,
                     'cost' => (float) $student->plan_cost,
                     'paid' => (float) $student->paid_amount,
