@@ -68,6 +68,12 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Local time zone of the driving school. Lesson dates/times are entered and
+    | stored in this time zone, and it is used to block booking lessons in the past.
+    */
+    'school_timezone' => env('SCHOOL_TIMEZONE', 'America/New_York'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

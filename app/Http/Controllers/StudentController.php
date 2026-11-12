@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lesson;
+use App\Models\Package;
 use App\Models\Student;
 use App\Models\StudentLicense;
 use App\Models\StudentPayment;
@@ -9,6 +11,8 @@ use App\Support\ImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
 {
@@ -21,48 +25,12 @@ class StudentController extends Controller
         $dbStudents = Student::with([
             'licenses' => function ($query) {
                 $query->where('is_active', true);
-            }
-        ])->get();
+            },
+            'packageModel',
+        ])->withSum(['lessons as used_minutes' => fn ($q) => $q->active()], 'duration_minutes')->get();
 
-        // Map database records to the exact structure expected by the JS mockup system
-        $students = $dbStudents->map(function ($s) {
-            $activeLicense = $s->licenses->first();
-            return [
-                'id' => 'EST-' . str_pad($s->id, 3, '0', STR_PAD_LEFT),
-                'db_id' => $s->id,
-                'date' => $s->created_at->format('Y-m-d'),
-                'name' => $s->first_name . ' ' . $s->last_name,
-                'first_name' => $s->first_name,
-                'middle_name' => $s->middle_name,
-                'last_name' => $s->last_name,
-                'birth_date' => $s->birth_date,
-                'gender' => $s->gender,
-                'address' => $s->address,
-                'city' => $s->city,
-                'state' => $s->state,
-                'zip_code' => $s->zip_code,
-                'phone' => $s->phone,
-                'email' => $s->email,
-                'contract_number' => $s->contract_number,
-                'plan' => $s->package,
-                'cost' => (float) $s->plan_cost,
-                'paid' => (float) $s->paid_amount,
-                'debt' => (float) $s->debt_amount,
-                'transmission' => $s->transmission,
-                'status' => $s->debt_amount > 0 ? 'Activo' : 'Al Día',
-                'height' => $s->height,
-                'eye_color' => $s->eye_color,
-                'is_organ_donor' => (bool) $s->is_organ_donor,
-                'student_photo_url' => $s->student_photo_url,
-                'license' => $activeLicense ? [
-                    'license_number' => $activeLicense->license_number,
-                    'expiration_date' => $activeLicense->expiration_date,
-                    'license_class' => $activeLicense->license_class,
-                    'license_photo_url' => $activeLicense->license_photo_url,
-                    'license_photo_back_url' => $activeLicense->license_photo_back_url,
-                ] : null
-            ];
-        });
+        // Map database records to the exact structure expected by the JS dashboard
+        $students = $dbStudents->map(fn ($s) => $s->toDashboardArray((int) $s->used_minutes));
 
         // Load all instructors with active license and vehicleModel relations
         $dbInstructors = \App\Models\Instructor::with([
@@ -144,8 +112,18 @@ class StudentController extends Controller
             ];
         });
 
+        // Package catalog (active ones are offered for enrollment; all are shown in "Paquetes")
+        $packages = Package::withCount('students')->orderByDesc('is_active')->orderBy('name')->get()
+            ->map(fn ($p) => $p->toDashboardArray());
+
+        // Scheduled driving lessons
+        $lessons = Lesson::with(['student', 'instructor', 'vehicle'])
+            ->orderBy('starts_at')
+            ->get()
+            ->map(fn ($l) => $l->toDashboardArray());
+
         // Pass mapping to view
-        return view('driving', compact('students', 'instructors', 'vehicles', 'reviews', 'payments'));
+        return view('driving', compact('students', 'instructors', 'vehicles', 'reviews', 'payments', 'packages', 'lessons'));
     }
 
     /**
@@ -177,15 +155,18 @@ class StudentController extends Controller
             // Enrollment details
             'package' => 'required|string|max:100',
             'transmission' => 'required|string|max:20',
-            'plan_cost' => 'required|numeric|min:0',
             'paid_amount' => 'required|numeric|min:0',
-            'debt_amount' => 'required|numeric|min:0',
 
             // License/Permit details (optional)
             'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number',
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
         ]);
+
+        $package = Package::where('is_active', true)->where('name', $validated['package'])->first();
+        if (!$package) {
+            throw ValidationException::withMessages(['package' => 'Selecciona un paquete activo del catálogo.']);
+        }
 
         try {
             DB::beginTransaction();
@@ -194,7 +175,7 @@ class StudentController extends Controller
             $student_photo_url = $this->saveImage($validated['student_photo'] ?? null, 'students', 'student_profile');
 
             // Create student
-            $student = Student::create([
+            $student = new Student([
                 'contract_number' => $validated['contract_number'] ?? null,
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'] ?? null,
@@ -211,13 +192,12 @@ class StudentController extends Controller
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
                 'student_photo_url' => $student_photo_url,
-                'package' => $validated['package'],
                 'transmission' => $validated['transmission'],
-                'plan_cost' => $validated['plan_cost'],
                 'paid_amount' => $validated['paid_amount'],
-                'debt_amount' => $validated['debt_amount'],
-                'status' => $validated['debt_amount'] > 0 ? 'active' : 'al_dia',
             ]);
+            // Copies name, price and lessons of the package at purchase time
+            $student->purchasePackage($package);
+            $student->save();
 
             // Create license/permit if filled
             $activeLicense = null;
@@ -241,41 +221,7 @@ class StudentController extends Controller
             // Return formatted student back for JS rendering
             return response()->json([
                 'success' => true,
-                'student' => [
-                    'id' => 'EST-' . str_pad($student->id, 3, '0', STR_PAD_LEFT),
-                    'db_id' => $student->id,
-                    'date' => $student->created_at->format('Y-m-d'),
-                    'name' => $student->first_name . ' ' . $student->last_name,
-                    'first_name' => $student->first_name,
-                    'middle_name' => $student->middle_name,
-                    'last_name' => $student->last_name,
-                    'birth_date' => $student->birth_date,
-                    'gender' => $student->gender,
-                    'address' => $student->address,
-                    'city' => $student->city,
-                    'state' => $student->state,
-                    'zip_code' => $student->zip_code,
-                    'phone' => $student->phone,
-                    'email' => $student->email,
-                    'contract_number' => $student->contract_number,
-                    'plan' => $student->package,
-                    'cost' => (float) $student->plan_cost,
-                    'paid' => (float) $student->paid_amount,
-                    'debt' => (float) $student->debt_amount,
-                    'transmission' => $student->transmission,
-                    'status' => $student->debt_amount > 0 ? 'Activo' : 'Al Día',
-                    'height' => $student->height,
-                    'eye_color' => $student->eye_color,
-                    'is_organ_donor' => (bool) $student->is_organ_donor,
-                    'student_photo_url' => $student->student_photo_url,
-                    'license' => $activeLicense ? [
-                        'license_number' => $activeLicense->license_number,
-                        'expiration_date' => $activeLicense->expiration_date,
-                        'license_class' => $activeLicense->license_class,
-                        'license_photo_url' => $activeLicense->license_photo_url,
-                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
-                    ] : null
-                ]
+                'student' => $student->refresh()->toDashboardArray(),
             ]);
 
         } catch (\Exception $e) {
@@ -371,15 +317,23 @@ class StudentController extends Controller
             // Enrollment details
             'package' => 'required|string|max:100',
             'transmission' => 'required|string|max:20',
-            'plan_cost' => 'required|numeric|min:0',
             'paid_amount' => 'required|numeric|min:0',
-            'debt_amount' => 'required|numeric|min:0',
 
             // License/Permit details (optional)
             'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number,' . ($student->activeLicense ? $student->activeLicense->id : 'NULL'),
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
         ]);
+
+        // Same package as before -> keep the price/lessons it was bought with.
+        // Different package -> it must be an active catalog package (new purchase).
+        $newPackage = null;
+        if ($validated['package'] !== $student->package) {
+            $newPackage = Package::where('is_active', true)->where('name', $validated['package'])->first();
+            if (!$newPackage) {
+                throw ValidationException::withMessages(['package' => 'Selecciona un paquete activo del catálogo.']);
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -415,13 +369,18 @@ class StudentController extends Controller
                 'eye_color' => $validated['eye_color'] ?? null,
                 'is_organ_donor' => $request->boolean('is_organ_donor'),
                 'student_photo_url' => $student_photo_url,
-                'package' => $validated['package'],
                 'transmission' => $validated['transmission'],
-                'plan_cost' => $validated['plan_cost'],
                 'paid_amount' => $validated['paid_amount'],
-                'debt_amount' => $validated['debt_amount'],
-                'status' => $validated['debt_amount'] > 0 ? 'active' : 'al_dia',
             ]);
+
+            if ($newPackage) {
+                $student->purchasePackage($newPackage);
+            } else {
+                $debt = max(0, (float) $student->plan_cost - (float) $student->paid_amount);
+                $student->debt_amount = $debt;
+                $student->status = $debt > 0 ? 'active' : 'al_dia';
+            }
+            $student->save();
 
             // Update or create license
             $activeLicense = $student->activeLicense;
@@ -494,41 +453,7 @@ class StudentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'student' => [
-                    'id' => 'EST-' . str_pad($student->id, 3, '0', STR_PAD_LEFT),
-                    'db_id' => $student->id,
-                    'date' => $student->created_at->format('Y-m-d'),
-                    'name' => $student->first_name . ' ' . $student->last_name,
-                    'first_name' => $student->first_name,
-                    'middle_name' => $student->middle_name,
-                    'last_name' => $student->last_name,
-                    'birth_date' => $student->birth_date,
-                    'gender' => $student->gender,
-                    'address' => $student->address,
-                    'city' => $student->city,
-                    'state' => $student->state,
-                    'zip_code' => $student->zip_code,
-                    'phone' => $student->phone,
-                    'email' => $student->email,
-                    'contract_number' => $student->contract_number,
-                    'plan' => $student->package,
-                    'cost' => (float) $student->plan_cost,
-                    'paid' => (float) $student->paid_amount,
-                    'debt' => (float) $student->debt_amount,
-                    'transmission' => $student->transmission,
-                    'status' => $student->debt_amount > 0 ? 'Activo' : 'Al Día',
-                    'height' => $student->height,
-                    'eye_color' => $student->eye_color,
-                    'is_organ_donor' => (bool) $student->is_organ_donor,
-                    'student_photo_url' => $student->student_photo_url,
-                    'license' => $activeLicense ? [
-                        'license_number' => $activeLicense->license_number,
-                        'expiration_date' => $activeLicense->expiration_date,
-                        'license_class' => $activeLicense->license_class,
-                        'license_photo_url' => $activeLicense->license_photo_url,
-                        'license_photo_back_url' => $activeLicense->license_photo_back_url,
-                    ] : null
-                ]
+                'student' => $student->refresh()->toDashboardArray(),
             ]);
 
         } catch (\Exception $e) {
@@ -635,6 +560,57 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error registrando abono: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $this->errorMessage($e)
+            ], 500);
+        }
+    }
+
+    /**
+     * Assign a package to a student that doesn't have one yet.
+     * The package price becomes the plan cost; previous payments are kept.
+     */
+    public function assignPackage(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'package_id' => 'required|integer|exists:packages,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $student = Student::lockForUpdate()->findOrFail($id);
+
+            if ($student->package_id) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El estudiante ya tiene un paquete asignado. Para cambiarlo, edita su expediente.'
+                ], 422);
+            }
+
+            $package = Package::where('is_active', true)->find($validated['package_id']);
+            if (!$package) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ese paquete no está activo.'
+                ], 422);
+            }
+
+            $student->purchasePackage($package);
+            $student->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'student' => $student->refresh()->toDashboardArray(),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => $this->errorMessage($e)

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\LessonController;
+use App\Http\Controllers\PackageController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UploadController;
@@ -25,6 +27,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/students/{id}/payment', [StudentController::class, 'recordPayment'])->name('students.payment');
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::put('/students/{id}', [StudentController::class, 'update'])->name('students.update');
+    Route::put('/students/{id}/package', [StudentController::class, 'assignPackage'])->name('students.package');
+
+    // Package catalog
+    Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
+    Route::put('/packages/{id}', [PackageController::class, 'update'])->name('packages.update');
+    Route::put('/packages/{id}/active', [PackageController::class, 'setActive'])->name('packages.active');
+    Route::delete('/packages/{id}', [PackageController::class, 'destroy'])->name('packages.destroy');
+
+    // Driving lessons (agenda)
+    Route::post('/lessons', [LessonController::class, 'store'])->name('lessons.store');
+    Route::put('/lessons/{id}', [LessonController::class, 'update'])->name('lessons.update');
+    Route::put('/lessons/{id}/status', [LessonController::class, 'updateStatus'])->name('lessons.status');
 
     // Student Payments
     Route::post('/payments', [StudentController::class, 'storePayment'])->name('payments.store');

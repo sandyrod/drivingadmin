@@ -38,6 +38,20 @@
                     'label' => 'Registro de Abonos'
                 ],
                 [
+                    'id' => 'agenda',
+                    'route' => 'agenda',
+                    'path' => 'agenda',
+                    'icon' => 'fa-solid fa-calendar-days',
+                    'label' => 'Agenda de Clases'
+                ],
+                [
+                    'id' => 'paquetes',
+                    'route' => 'paquetes',
+                    'path' => 'paquetes',
+                    'icon' => 'fa-solid fa-boxes-stacked',
+                    'label' => 'Paquetes'
+                ],
+                [
                     'id' => 'registro-instructor',
                     'route' => 'registro-instructor',
                     'path' => 'registro-instructor',
