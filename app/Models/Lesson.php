@@ -33,6 +33,8 @@ class Lesson extends Model
         'duration_minutes',
         'status',
         'notes',
+        'calendar_sequence',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -41,6 +43,8 @@ class Lesson extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'duration_minutes' => 'integer',
+            'calendar_sequence' => 'integer',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

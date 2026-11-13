@@ -73,6 +73,12 @@ return [
     */
     'school_timezone' => env('SCHOOL_TIMEZONE', 'America/New_York'),
 
+    // Hours before a lesson when the reminder (email + SMS) is sent to the student and instructor
+    'lesson_reminder_hours' => (int) env('LESSON_REMINDER_HOURS', 24),
+
+    // Where lessons start (shown in the calendar event). Optional.
+    'school_address' => env('SCHOOL_ADDRESS'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Instructor;
 use App\Models\Lesson;
 use App\Models\Student;
+use App\Notifications\LessonNotification;
+use App\Services\LessonNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +48,10 @@ class LessonController extends Controller
         }
 
         return $this->saveLesson($validated, $lesson->student_id, $lesson);
+    }
+
+    public function __construct(private LessonNotifier $notifier)
+    {
     }
 
     private function slotRules(): array
@@ -103,11 +109,17 @@ class LessonController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ];
 
+            $previous = null;
             if ($lesson) {
+                // Copy of the lesson before the change, to cancel the old instructor's calendar event
+                $previous = (clone $lesson)->load(['student', 'instructor', 'vehicle']);
                 // Keep the vehicle unless the instructor changed
                 if ($lesson->instructor_id !== $instructor->id) {
                     $data['vehicle_id'] = $instructor->vehicle_id;
                 }
+                // New calendar version; the reminder is sent again for the new date
+                $data['calendar_sequence'] = $lesson->calendar_sequence + 1;
+                $data['reminder_sent_at'] = null;
                 $lesson->update($data);
             } else {
                 $lesson = Lesson::create($data + [
@@ -119,16 +131,43 @@ class LessonController extends Controller
 
             DB::commit();
 
+            $lesson->load(['student', 'instructor', 'vehicle']);
+            $notified = $this->notifyChange($lesson, $previous);
+
             return response()->json([
                 'success' => true,
-                'lesson' => $lesson->load(['student', 'instructor', 'vehicle'])->toDashboardArray(),
+                'lesson' => $lesson->toDashboardArray(),
                 'student' => ['db_id' => $student->id, 'used_minutes' => $student->usedLessonMinutes()],
+                'notifications' => $notified,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $this->errorMessage($e)], 500);
         }
+    }
+
+    /**
+     * Email (calendar invitation) / SMS the student and instructor about a new or rescheduled lesson.
+     * When the instructor changed, the previous instructor gets a cancellation for their event.
+     */
+    private function notifyChange(Lesson $lesson, ?Lesson $previous): array
+    {
+        if (!$previous) {
+            return $this->notifier->notify($lesson, LessonNotification::SCHEDULED);
+        }
+
+        if ($previous->instructor_id === $lesson->instructor_id) {
+            return $this->notifier->notify($lesson, LessonNotification::RESCHEDULED);
+        }
+
+        $previous->calendar_sequence = $lesson->calendar_sequence;
+
+        return LessonNotifier::merge(
+            $this->notifier->notify($lesson, LessonNotification::RESCHEDULED, ['student']),
+            $this->notifier->notify($lesson, LessonNotification::SCHEDULED, ['instructor']),
+            $this->notifier->notify($previous, LessonNotification::CANCELLED, ['instructor']),
+        );
     }
 
     /**
@@ -189,11 +228,17 @@ class LessonController extends Controller
         }
 
         try {
-            $lesson->update(['status' => $validated['status']]);
+            $cancelled = $validated['status'] === Lesson::STATUS_CANCELLED;
+            $lesson->update(['status' => $validated['status']] + ($cancelled ? ['calendar_sequence' => $lesson->calendar_sequence + 1] : []));
+            $lesson->load(['student', 'instructor', 'vehicle']);
+
+            // A cancelled lesson is removed from both calendars; completed / no-show need no notice
+            $notified = $cancelled ? $this->notifier->notify($lesson, LessonNotification::CANCELLED) : null;
 
             return response()->json([
                 'success' => true,
-                'lesson' => $lesson->load(['student', 'instructor', 'vehicle'])->toDashboardArray(),
+                'lesson' => $lesson->toDashboardArray(),
+                'notifications' => $notified,
                 'student' => [
                     'db_id' => $lesson->student_id,
                     'used_minutes' => (int) Lesson::active()->where('student_id', $lesson->student_id)->sum('duration_minutes'),

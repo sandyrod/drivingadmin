@@ -3460,6 +3460,7 @@
                     student.used_minutes = res.student.used_minutes;
 
                     showToast(`Clase ${rescheduling ? 'reprogramada' : 'agendada'}: ${res.lesson.student_name} con ${res.lesson.instructor_name}, ${res.lesson.date} ${res.lesson.time}.`, 'success');
+                    showLessonNotifications(res.notifications);
                     if (rescheduling) {
                         cancelLessonEdit();
                     } else {
@@ -3532,9 +3533,21 @@
                     if (student) student.used_minutes = res.student.used_minutes;
 
                     showToast(`Clase ${res.lesson.id}: ${lessonStatusLabel(res.lesson.status)}.`, 'success');
+                    showLessonNotifications(res.notifications);
                     if (editingLessonId === dbId) cancelLessonEdit(); else initAgenda();
                 })
                 .catch(err => showToast(err.message, 'warning'));
+        }
+
+        // Tells who received the calendar invitation / SMS and who could not be notified
+        function showLessonNotifications(n) {
+            if (!n) return;
+            if (n.sent && n.sent.length) {
+                showToast(`Notificado: ${n.sent.join(', ')}.`, 'info');
+            }
+            if (n.failed && n.failed.length) {
+                showToast(`No se pudo notificar a: ${n.failed.join(', ')}. Revisa sus datos de contacto o la configuración de correo.`, 'warning');
+            }
         }
 
         function renderLessonsTable() {
