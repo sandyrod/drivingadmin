@@ -90,8 +90,8 @@ class LessonCalendar
         $event[] = 'STATUS:' . ($cancel ? 'CANCELLED' : 'CONFIRMED');
 
         if (!$cancel) {
-            // Phone alerts: the day before and one hour before
-            foreach (['-P1D', '-PT1H'] as $trigger) {
+            // Phone alerts: 24 hours before and 10 minutes before
+            foreach (['-P1D', '-PT10M'] as $trigger) {
                 array_push($event, 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . self::escape(self::title($lesson, $role)), 'TRIGGER:' . $trigger, 'END:VALARM');
             }
         }

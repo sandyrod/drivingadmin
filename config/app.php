@@ -76,6 +76,9 @@ return [
     // Hours before a lesson when the reminder (email + SMS) is sent to the student and instructor
     'lesson_reminder_hours' => (int) env('LESSON_REMINDER_HOURS', 24),
 
+    // Minutes before a lesson for the last-minute reminder (0 disables it)
+    'lesson_final_reminder_minutes' => (int) env('LESSON_FINAL_REMINDER_MINUTES', 10),
+
     // Where lessons start (shown in the calendar event). Optional.
     'school_address' => env('SCHOOL_ADDRESS'),
 

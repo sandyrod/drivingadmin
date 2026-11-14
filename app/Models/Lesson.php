@@ -35,6 +35,7 @@ class Lesson extends Model
         'notes',
         'calendar_sequence',
         'reminder_sent_at',
+        'final_reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ class Lesson extends Model
             'duration_minutes' => 'integer',
             'calendar_sequence' => 'integer',
             'reminder_sent_at' => 'datetime',
+            'final_reminder_sent_at' => 'datetime',
         ];
     }
 

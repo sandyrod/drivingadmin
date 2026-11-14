@@ -106,7 +106,8 @@ class LessonNotificationTest extends TestCase
         $this->assertStringContainsString('DTSTART:20261201T150000Z', $ics); // 10:00 New York = 15:00 UTC
         $this->assertStringContainsString('DTEND:20261201T154500Z', $ics);
         $this->assertStringContainsString('UID:lesson-' . $lesson->id . '@', $ics);
-        $this->assertStringContainsString('TRIGGER:-PT1H', $ics);
+        $this->assertStringContainsString('TRIGGER:-P1D', $ics);
+        $this->assertStringContainsString('TRIGGER:-PT10M', $ics);
         $this->assertStringContainsString('Traer licencia\; puntual', str_replace("\r\n ", '', $ics));
         foreach (explode("\r\n", $ics) as $line) {
             $this->assertLessThanOrEqual(75, strlen($line));
@@ -226,5 +227,53 @@ class LessonNotificationTest extends TestCase
 
         $sms = (new LessonNotification($soon, LessonNotification::REMINDER, 'student'))->toSms(new AnonymousNotifiable);
         $this->assertStringContainsString('Recordatorio', $sms);
+    }
+
+    public function test_last_minute_reminder_is_sent_10_minutes_before(): void
+    {
+        config(['app.lesson_reminder_hours' => 24, 'app.lesson_final_reminder_minutes' => 10]);
+        $student = $this->makeStudent();
+        $instructor = $this->makeInstructor();
+        $now = Carbon::now(config('app.school_timezone'))->startOfMinute();
+        $make = fn (Carbon $start) => Lesson::create([
+            'student_id' => $student->id, 'instructor_id' => $instructor->id,
+            'starts_at' => $start->format('Y-m-d H:i:00'), 'ends_at' => $start->copy()->addMinutes(45)->format('Y-m-d H:i:00'),
+            'duration_minutes' => 45, 'status' => Lesson::STATUS_SCHEDULED,
+        ]);
+
+        // Day-before reminder already sent; now it is 8 minutes before the lesson
+        $soon = $make($now->copy()->addMinutes(8));
+        $soon->forceFill(['reminder_sent_at' => now()->subDay()])->save();
+        // Booked at the last minute: only the last-minute reminder goes out
+        $lastMinute = $make($now->copy()->addMinutes(9));
+        // Still 2 hours away: day-before reminder only
+        $later = $make($now->copy()->addHours(2));
+
+        Notification::fake();
+        $this->artisan('lessons:send-reminders')->assertSuccessful();
+
+        $this->assertNotNull($soon->fresh()->final_reminder_sent_at);
+        $this->assertNotNull($lastMinute->fresh()->final_reminder_sent_at);
+        $this->assertNotNull($lastMinute->fresh()->reminder_sent_at);
+        $this->assertNull($later->fresh()->final_reminder_sent_at);
+        $this->assertNotNull($later->fresh()->reminder_sent_at);
+        $this->assertCount(4, $this->sentTo('', LessonNotification::FINAL_REMINDER)); // 2 lessons x (student + instructor)
+        $this->assertCount(2, $this->sentTo('', LessonNotification::REMINDER));       // only $later
+
+        $this->artisan('lessons:send-reminders')->assertSuccessful();
+        $this->assertCount(4, $this->sentTo('', LessonNotification::FINAL_REMINDER));
+
+        $notification = new LessonNotification($soon, LessonNotification::FINAL_REMINDER, 'student');
+        $this->assertMatchesRegularExpression('/empieza en (7|8) minutos/', $notification->toSms(new AnonymousNotifiable));
+        $mail = $notification->toMail(Notification::route('mail', 'ana@test.com'));
+        $this->assertStringContainsString('empieza en', $mail->subject);
+        $this->assertSame([], $mail->rawAttachments); // no new calendar invitation in reminders
+
+        // Rescheduling resets both reminders
+        $this->putJson("/lessons/{$later->id}", [
+            'instructor_id' => $instructor->id, 'date' => $now->copy()->addDays(2)->format('Y-m-d'), 'time' => '10:00', 'duration_minutes' => 45,
+        ])->assertOk();
+        $this->assertNull($later->fresh()->reminder_sent_at);
+        $this->assertNull($later->fresh()->final_reminder_sent_at);
     }
 }

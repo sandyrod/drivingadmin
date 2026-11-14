@@ -120,6 +120,7 @@ class LessonController extends Controller
                 // New calendar version; the reminder is sent again for the new date
                 $data['calendar_sequence'] = $lesson->calendar_sequence + 1;
                 $data['reminder_sent_at'] = null;
+                $data['final_reminder_sent_at'] = null;
                 $lesson->update($data);
             } else {
                 $lesson = Lesson::create($data + [

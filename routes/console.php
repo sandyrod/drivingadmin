@@ -10,4 +10,4 @@ Artisan::command('inspire', function () {
 
 // Lesson reminders (email + SMS). Needs the Laravel scheduler running:
 // `php artisan schedule:work` locally, or a cron entry `* * * * * php artisan schedule:run` on the server.
-Schedule::command('lessons:send-reminders')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('lessons:send-reminders')->everyMinute()->withoutOverlapping();
