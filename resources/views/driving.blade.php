@@ -1316,6 +1316,56 @@
             </div>
         </div>
     </div>
+
+    <!-- ================= MODAL: STUDENT PROFILE ================= -->
+    <div id="student-profile-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm overflow-y-auto p-3 sm:p-6"
+        onclick="if (event.target === this) closeStudentProfile()">
+        <div class="max-w-6xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="flex flex-wrap items-center gap-3 px-5 sm:px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+                <div class="flex-1 min-w-[200px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500" id="sp-subtitle"></p>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-100 uppercase" id="sp-name"></h2>
+                </div>
+                <span id="sp-balance" class="px-3 py-1 rounded-full text-sm font-black"></span>
+                <button type="button" onclick="closeStudentProfile()" class="text-slate-500 hover:text-slate-100 text-xl px-2" title="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-wrap gap-2 px-5 sm:px-6 py-3 border-b border-slate-800">
+                <button type="button" onclick="studentProfileAction('edit')" class="sp-action"><i class="fa-solid fa-pen"></i> Editar</button>
+                <button type="button" onclick="studentProfileAction('agenda')" class="sp-action"><i class="fa-solid fa-calendar-plus"></i> Agendar clase</button>
+                <button type="button" onclick="studentProfileAction('road_test')" class="sp-action"><i class="fa-solid fa-road"></i> Road Test</button>
+                <button type="button" onclick="studentProfileAction('pay')" class="sp-action" id="sp-pay-btn"><i class="fa-solid fa-dollar-sign"></i> Registrar pago</button>
+                <button type="button" onclick="studentProfileAction('invoice')" class="sp-action"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-1 px-5 sm:px-6 pt-3 border-b border-slate-800 overflow-x-auto">
+                <button type="button" data-sp-tab="profile" onclick="switchStudentProfileTab('profile')" class="sp-tab">Perfil</button>
+                <button type="button" data-sp-tab="lessons" onclick="switchStudentProfileTab('lessons')" class="sp-tab">Clases <span id="sp-lessons-count"></span></button>
+                <button type="button" data-sp-tab="payments" onclick="switchStudentProfileTab('payments')" class="sp-tab">Pagos <span id="sp-payments-count"></span></button>
+            </div>
+
+            <div class="p-5 sm:p-6">
+                <div id="sp-tab-profile"></div>
+                <div id="sp-tab-lessons" class="hidden"></div>
+                <div id="sp-tab-payments" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .sp-action { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .8rem; border-radius: .6rem; font-size: .75rem; font-weight: 700;
+            border: 1px solid rgb(var(--slate-800)); background: rgb(var(--slate-950)); color: rgb(var(--slate-300)); transition: all .15s; }
+        .sp-action:hover { border-color: rgb(var(--accent-500)); color: rgb(var(--accent-500)); }
+        .sp-tab { padding: .55rem 1rem; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
+            color: rgb(var(--slate-500)); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .sp-tab:hover { color: rgb(var(--slate-200)); }
+        .sp-tab.active { color: rgb(var(--accent-500)); border-bottom-color: rgb(var(--accent-500)); }
+    </style>
 @endsection
 
 @push('scripts')
@@ -1551,7 +1601,7 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-800/20 transition duration-150";
                     tr.innerHTML = `
-                        <td class="py-3.5 font-semibold text-slate-200">${esc(s.name)}${s.contract_number ? `<span class="block text-[10px] font-normal text-slate-500">Contrato ${esc(s.contract_number)}</span>` : ''}</td>
+                        <td class="py-3.5 font-semibold text-slate-200"><button type="button" onclick="openStudentProfile(${s.db_id})" class="hover:text-amber-500 hover:underline text-left">${esc(s.name)}</button>${s.contract_number ? `<span class="block text-[10px] font-normal text-slate-500">Contrato ${esc(s.contract_number)}</span>` : ''}</td>
                         <td class="py-3.5 text-xs text-slate-400">${esc(s.plan)}</td>
                         <td class="py-3.5 text-right font-bold text-red-500">$${s.debt}</td>
                         <td class="py-3.5 text-center">
@@ -2558,7 +2608,7 @@
                         <td class="${SHEET_TD} text-amber-500 font-bold">${s.id}</td>
                         <td class="${SHEET_TD} text-slate-300">${esc(s.contract_number || '—')}</td>
                         <td class="${SHEET_TD} text-slate-400">${esc(s.date)}</td>
-                        <td class="${SHEET_TD} text-slate-100 font-semibold">${esc(s.name)}</td>
+                        <td class="${SHEET_TD} text-slate-100 font-semibold"><button type="button" onclick="openStudentProfile(${s.db_id})" class="hover:text-amber-500 hover:underline text-left">${esc(s.name)}</button></td>
                         <td class="${SHEET_TD} text-slate-400">${esc(s.phone)}</td>
                         <td class="${SHEET_TD} text-slate-400">${esc(s.plan)}</td>
                         <td class="${SHEET_TD} text-slate-400 font-bold">$${s.cost}</td>
@@ -2569,6 +2619,9 @@
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === 'Al Día' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-500'}">${s.status}</span>
                         </td>
                         <td class="px-4 py-2.5 text-center space-x-1 whitespace-nowrap">
+                            <button onclick="openStudentProfile(${s.db_id})" class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Ver ficha completa">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
                             <button onclick="openInvoice(${s.db_id})" class="bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Ver Invoice">
                                 <i class="fa-solid fa-file-invoice"></i>
                             </button>
@@ -3187,6 +3240,272 @@
             setLessonType('lesson');
             document.getElementById('lesson-student').value = studentDbId;
             handleAgendaStudentChange();
+        }
+
+        // ---------- Student profile (all the student's data in one place) ----------
+        let profileStudentId = null;
+
+        const GENDER_LABELS = { M: 'Masculino', F: 'Femenino', O: 'Otro' };
+
+        function openStudentProfile(studentDbId, tab = 'profile') {
+            const student = students.find(s => s.db_id === Number(studentDbId));
+            if (!student) return showToast('No se encontró el estudiante.', 'warning');
+
+            profileStudentId = student.db_id;
+            renderStudentProfile(student);
+            switchStudentProfileTab(tab);
+            document.getElementById('student-profile-modal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeStudentProfile() {
+            profileStudentId = null;
+            document.getElementById('student-profile-modal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && profileStudentId !== null) closeStudentProfile();
+        });
+
+        function switchStudentProfileTab(tab) {
+            ['profile', 'lessons', 'payments'].forEach(t => {
+                document.getElementById(`sp-tab-${t}`).classList.toggle('hidden', t !== tab);
+            });
+            document.querySelectorAll('[data-sp-tab]').forEach(b => b.classList.toggle('active', b.dataset.spTab === tab));
+        }
+
+        function studentProfileAction(action) {
+            const student = students.find(s => s.db_id === profileStudentId);
+            if (!student) return;
+            closeStudentProfile();
+
+            if (action === 'edit') editStudent(student.id);
+            else if (action === 'agenda') openAgendaForStudent(student.db_id);
+            else if (action === 'road_test') {
+                switchTab('agenda');
+                setLessonType('road_test');
+                document.getElementById('lesson-student').value = student.db_id;
+                handleAgendaStudentChange();
+            } else if (action === 'pay') {
+                if (student.debt > 0) simulateCobro(student.id);
+                else showToast('El estudiante no tiene saldo pendiente.', 'info');
+            } else if (action === 'invoice') openInvoice(student.db_id);
+        }
+
+        function ageFrom(dateStr) {
+            if (!dateStr) return null;
+            const b = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
+            if (isNaN(b)) return null;
+            const t = new Date();
+            let age = t.getFullYear() - b.getFullYear();
+            if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) age--;
+            return age;
+        }
+
+        function money(v) {
+            return '$' + Number(v || 0).toFixed(2);
+        }
+
+        // A labelled value, underlined like a form field (read-only)
+        function spField(label, value, extra = '') {
+            const shown = value === null || value === undefined || value === '' ? '<span class="text-slate-600">—</span>' : esc(String(value));
+            return `
+                <div class="py-2 border-b border-slate-800">
+                    <p class="text-[10px] font-semibold text-slate-500">${label}</p>
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-sm font-semibold text-slate-200 uppercase break-words">${shown}</p>${extra}
+                    </div>
+                </div>`;
+        }
+
+        function spCard(title, body, icon = '') {
+            return `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                    <h4 class="px-4 py-3 border-b border-slate-800 text-sm font-bold text-slate-100 flex items-center gap-2">
+                        ${icon ? `<i class="fa-solid ${icon} text-amber-500"></i>` : ''}${title}
+                    </h4>
+                    <div class="px-4 pb-3">${body}</div>
+                </div>`;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard?.writeText(text).then(() => showToast('Copiado: ' + text, 'success'));
+        }
+
+        function renderStudentProfile(student) {
+            const ownLessons = lessons.filter(l => l.student_id === student.db_id)
+                .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+            const ownPayments = payments.filter(p => p.student_id === student.db_id);
+            const lic = student.license;
+            const age = ageFrom(student.birth_date);
+            const today = new Date().toISOString().slice(0, 10);
+            const licExpired = lic && lic.expiration_date && String(lic.expiration_date).slice(0, 10) < today;
+
+            // Header
+            document.getElementById('sp-subtitle').textContent =
+                `${student.id}${student.contract_number ? ' · Contrato ' + student.contract_number : ''} · Inscrito ${student.date}`;
+            document.getElementById('sp-name').textContent =
+                [student.last_name, student.first_name, student.middle_name].filter(Boolean).join(' ').trim() || student.name;
+            const bal = document.getElementById('sp-balance');
+            bal.textContent = student.debt > 0 ? `Balance ${money(student.debt)}` : 'Al día';
+            bal.className = 'px-3 py-1 rounded-full text-sm font-black ' + (student.debt > 0 ? 'bg-red-600 text-white' : 'bg-green-600 text-white');
+            document.getElementById('sp-pay-btn').classList.toggle('opacity-50', !(student.debt > 0));
+            document.getElementById('sp-lessons-count').textContent = ownLessons.length ? `(${ownLessons.length})` : '';
+            document.getElementById('sp-payments-count').textContent = ownPayments.length ? `(${ownPayments.length})` : '';
+
+            // ----- Profile tab -----
+            const copyBtn = text => text
+                ? `<button type="button" data-copy="${esc(text)}" onclick="copyToClipboard(this.dataset.copy)" class="text-slate-500 hover:text-amber-500" title="Copiar"><i class="fa-regular fa-copy"></i></button>`
+                : '';
+
+            const permitCol = spCard('Permiso / Licencia', `
+                ${spField('Permit Number', lic?.license_number, copyBtn(lic?.license_number))}
+                ${spField('Clase', lic?.license_class)}
+                ${spField('Permit Expiry', lic?.expiration_date ? String(lic.expiration_date).slice(0, 10) : '',
+                    licExpired ? '<span class="text-[10px] font-bold bg-red-500/10 text-red-400 px-2 py-0.5 rounded">VENCIDO</span>' : '')}
+                ${spField('Last Name', student.last_name)}
+                ${spField('First Name', student.first_name)}
+                ${spField('Middle Name', student.middle_name)}
+                ${spField('Street Address', student.address)}
+                ${spField('City', student.city)}
+                ${spField('State', student.state)}
+                ${spField('Zip Code', student.zip_code)}`, 'fa-id-card');
+
+            const phoneLink = student.phone
+                ? `<span class="flex gap-2 text-xs"><a href="tel:${esc(student.phone)}" class="text-sky-400" title="Llamar"><i class="fa-solid fa-phone"></i></a><a href="sms:${esc(student.phone)}" class="text-sky-400" title="SMS"><i class="fa-solid fa-comment-sms"></i></a></span>`
+                : '';
+            const mailLink = student.email ? `<a href="mailto:${esc(student.email)}" class="text-sky-400 text-xs" title="Enviar correo"><i class="fa-solid fa-envelope"></i></a>` : '';
+
+            const contactCol = spCard('Contacto y Datos Personales', `
+                ${spField('Mobile', student.phone, phoneLink)}
+                ${spField('Primary Email', student.email, mailLink)}
+                ${spField(`Birth Date${age !== null ? ` (${age} años)` : ''}`, student.birth_date ? String(student.birth_date).slice(0, 10) : '')}
+                ${spField('Gender', GENDER_LABELS[student.gender] || student.gender)}
+                ${spField('Height', student.height)}
+                ${spField('Eye Color', student.eye_color)}
+                ${spField('Organ Donor', student.is_organ_donor ? 'Sí' : 'No')}
+                ${spField('Transmisión', student.transmission)}`, 'fa-address-book');
+
+            // Road test, package, next class
+            const st = studentLessonStats(student);
+            const count = min => Math.round(min / LESSON_MINUTES * 10) / 10;
+            const nextRoadTest = ownLessons.filter(l => isRoadTest(l) && l.status === 'scheduled')
+                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
+            const lastRoadTest = ownLessons.find(l => isRoadTest(l) && l.status !== 'cancelled');
+            const roadTest = nextRoadTest || lastRoadTest;
+            const nextLesson = ownLessons.filter(l => !isRoadTest(l) && l.status === 'scheduled' && l.date >= today)
+                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
+
+            const roadTestCard = spCard('Road Test', roadTest ? `
+                ${spField('Appointment Time', `${roadTest.date} ${roadTest.time}`,
+                    `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${(LESSON_STATUS[roadTest.status] || {}).cls || ''}">${esc(lessonStatusLabel(roadTest.status))}</span>`)}
+                ${spField('Test Location', roadTest.location)}
+                ${roadTest.location ? `<div class="flex gap-4 text-xs pt-2">${mapLinks(roadTest.location)}</div>` : ''}
+                ${spField('Instructor', roadTest.instructor_name)}` : `
+                <p class="text-xs text-slate-500 pt-3">Sin Road Test agendado.</p>
+                <button type="button" onclick="studentProfileAction('road_test')" class="mt-2 text-xs font-bold text-violet-400 hover:underline"><i class="fa-solid fa-plus"></i> Agendar Road Test</button>`, 'fa-road');
+
+            const packageCard = spCard('Package', `
+                ${spField('Paquete', student.plan || 'Sin paquete asignado')}
+                ${spField('Lesson Count', student.package_lessons ? `${student.package_lessons} (${LESSON_MINUTES} min c/u)` : '0')}
+                <div class="grid grid-cols-4 gap-2 pt-3 text-center">
+                    <div><p class="text-lg font-black text-green-500">${count(st.taken)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Tomadas</p></div>
+                    <div><p class="text-lg font-black text-amber-500">${count(st.scheduled)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Agendadas</p></div>
+                    <div><p class="text-lg font-black text-red-400">${count(st.noShow)}</p><p class="text-[9px] uppercase font-bold text-slate-500">No asistió</p></div>
+                    <div><p class="text-lg font-black ${st.left ? 'text-sky-400' : 'text-slate-500'}">${count(st.left)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Le quedan</p></div>
+                </div>
+                ${spField('Próxima clase', nextLesson ? `${nextLesson.date} ${nextLesson.time} · ${nextLesson.instructor_name}` : '')}`, 'fa-box-open');
+
+            const billingCard = spCard('Billing', `
+                ${spField('Total', money(student.cost))}
+                ${spField('Payments', money(student.paid))}
+                <div class="flex justify-between items-center pt-3">
+                    <span class="text-xs font-bold uppercase text-slate-500">Balance</span>
+                    <span class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</span>
+                </div>`, 'fa-dollar-sign');
+
+            const img = (url, alt) => url
+                ? `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="${alt}" class="w-full rounded-lg border border-slate-800 object-contain max-h-56 bg-slate-900"></a>`
+                : `<div class="w-full h-32 rounded-lg border border-dashed border-slate-800 flex items-center justify-center text-xs text-slate-600">Sin ${alt.toLowerCase()}</div>`;
+
+            const photosCard = spCard("Learner's Permit", `
+                <div class="space-y-3 pt-3">
+                    ${img(lic?.license_photo_url, 'Permiso (frente)')}
+                    ${lic?.license_photo_back_url ? img(lic.license_photo_back_url, 'Permiso (reverso)') : ''}
+                    <div class="grid grid-cols-[80px_1fr] gap-3 items-center">
+                        ${student.student_photo_url
+                            ? `<img src="${esc(student.student_photo_url)}" alt="Foto" class="w-20 h-20 rounded-full object-cover border border-slate-800">`
+                            : `<div class="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 text-2xl"><i class="fa-solid fa-user"></i></div>`}
+                        <p class="text-[11px] text-slate-500">Foto del estudiante</p>
+                    </div>
+                </div>`, 'fa-image');
+
+            document.getElementById('sp-tab-profile').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+                    <div>${permitCol}</div>
+                    <div>${contactCol}</div>
+                    <div class="space-y-4">${roadTestCard}${packageCard}${billingCard}</div>
+                    <div>${photosCard}</div>
+                </div>`;
+
+            // ----- Lessons tab -----
+            document.getElementById('sp-tab-lessons').innerHTML = ownLessons.length ? `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                            <tr><th class="py-2 pr-3">Fecha</th><th class="py-2 pr-3">Hora</th><th class="py-2 pr-3">Tipo</th><th class="py-2 pr-3">Instructor</th><th class="py-2 pr-3">Vehículo</th><th class="py-2 pr-3">Estado</th><th class="py-2">Notas / Lugar</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            ${ownLessons.map(l => `
+                                <tr class="${isRoadTest(l) ? 'bg-violet-500/10' : ''}">
+                                    <td class="py-2 pr-3 font-mono text-slate-200 whitespace-nowrap">${esc(l.date)}</td>
+                                    <td class="py-2 pr-3 font-mono text-slate-400 whitespace-nowrap">${esc(l.time)}–${esc(l.end_time)}</td>
+                                    <td class="py-2 pr-3 whitespace-nowrap">${isRoadTest(l)
+                                        ? '<span class="bg-violet-600 text-white text-[10px] font-black px-2 py-0.5 rounded">ROAD TEST</span>'
+                                        : `<span class="text-xs text-slate-400">${esc(lessonsText(l.duration_minutes))}</span>`}</td>
+                                    <td class="py-2 pr-3 text-slate-300">${esc(l.instructor_name)}</td>
+                                    <td class="py-2 pr-3 text-xs text-slate-500">${esc(l.vehicle || '—')}</td>
+                                    <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${(LESSON_STATUS[l.status] || {}).cls || ''}">${esc(lessonStatusLabel(l.status))}</span></td>
+                                    <td class="py-2 text-xs text-slate-400">
+                                        ${l.location ? `<span class="text-violet-300">${esc(l.location)}</span><span class="flex gap-3 mt-0.5">${mapLinks(l.location)}</span>` : ''}
+                                        ${l.notes ? `<span class="block">${esc(l.notes)}</span>` : ''}
+                                    </td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>` : `<p class="text-sm text-slate-500 text-center py-8">El estudiante no tiene clases agendadas.</p>`;
+
+            // ----- Payments tab -----
+            const initial = Math.max(0, Math.round((student.paid - ownPayments.reduce((sum, p) => sum + p.amount, 0)) * 100) / 100);
+            document.getElementById('sp-tab-payments').innerHTML = `
+                <div class="grid grid-cols-3 gap-3 mb-5 max-w-xl">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Total</p><p class="text-lg font-black text-slate-100">${money(student.cost)}</p></div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Payments</p><p class="text-lg font-black text-green-500">${money(student.paid)}</p></div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Balance</p><p class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</p></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                            <tr><th class="py-2 pr-3">Fecha</th><th class="py-2 pr-3">Recibo</th><th class="py-2 pr-3">Método</th><th class="py-2 pr-3 text-right">Payment</th><th class="py-2 pr-3 text-right">Balance</th><th class="py-2"></th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            ${initial > 0 ? `
+                                <tr><td class="py-2 pr-3 font-mono text-slate-400">${esc(student.date)}</td><td class="py-2 pr-3 text-slate-400" colspan="2">Pago inicial (inscripción)</td>
+                                    <td class="py-2 pr-3 text-right font-bold text-green-500">${money(initial)}</td><td></td><td></td></tr>` : ''}
+                            ${ownPayments.map(p => `
+                                <tr>
+                                    <td class="py-2 pr-3 font-mono text-slate-400">${esc(p.payment_date)}</td>
+                                    <td class="py-2 pr-3 font-bold text-amber-500">${esc(p.id)}</td>
+                                    <td class="py-2 pr-3 text-slate-300">${esc(paymentMethodLabel(p.payment_method))}${p.notes ? `<span class="block text-[11px] text-slate-500">${esc(p.notes)}</span>` : ''}</td>
+                                    <td class="py-2 pr-3 text-right font-bold text-green-500">${money(p.amount)}</td>
+                                    <td class="py-2 pr-3 text-right text-slate-400">${money(p.remaining_debt)}</td>
+                                    <td class="py-2 text-right"><button type="button" onclick="printReceipt(${p.db_id})" class="text-xs font-bold text-sky-400 hover:underline"><i class="fa-solid fa-receipt"></i> Recibo</button></td>
+                                </tr>`).join('')}
+                            ${!initial && !ownPayments.length ? '<tr><td colspan="6" class="py-6 text-center text-xs text-slate-500">Sin pagos registrados.</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>`;
         }
 
         // Invoice: package bought, all the student's payments and the balance
