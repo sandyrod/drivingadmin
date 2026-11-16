@@ -35,12 +35,27 @@ class LessonCalendar
 
     public static function title(Lesson $lesson, string $role): string
     {
+        if ($lesson->isRoadTest()) {
+            return $role === 'instructor'
+                ? 'ROAD TEST con ' . self::studentName($lesson)
+                : 'ROAD TEST (examen de manejo) - ' . config('app.name');
+        }
+
         return $role === 'instructor'
             ? 'Clase de manejo con ' . self::studentName($lesson)
             : 'Clase de manejo - ' . config('app.name');
     }
 
-    public static function description(Lesson $lesson, string $role): string
+    /** Event location: the road test site, or the school address. */
+    public static function location(Lesson $lesson): ?string
+    {
+        return ($lesson->isRoadTest() && $lesson->location) ? $lesson->location : config('app.school_address');
+    }
+
+    /**
+     * @param bool $mapLinks include Google / Apple Maps links of the road test site (plain text)
+     */
+    public static function description(Lesson $lesson, string $role, bool $mapLinks = true): string
     {
         $lines = [
             $role === 'instructor'
@@ -54,6 +69,10 @@ class LessonCalendar
         }
         if ($lesson->notes) {
             $lines[] = 'Notas: ' . $lesson->notes;
+        }
+        if ($mapLinks && $lesson->isRoadTest() && $lesson->location) {
+            $lines[] = 'Google Maps: ' . Lesson::googleMapsUrl($lesson->location);
+            $lines[] = 'Apple Maps: ' . Lesson::appleMapsUrl($lesson->location);
         }
         $lines[] = 'Referencia: CLS-' . str_pad($lesson->id, 4, '0', STR_PAD_LEFT);
 
@@ -80,7 +99,7 @@ class LessonCalendar
             'DESCRIPTION:' . self::escape(self::description($lesson, $role)),
         ];
 
-        if ($address = config('app.school_address')) {
+        if ($address = self::location($lesson)) {
             $event[] = 'LOCATION:' . self::escape($address);
         }
 
@@ -118,7 +137,7 @@ class LessonCalendar
             'dates' => self::start($lesson)->utc()->format('Ymd\THis\Z') . '/' . self::end($lesson)->utc()->format('Ymd\THis\Z'),
             'details' => self::description($lesson, $role),
         ];
-        if ($address = config('app.school_address')) {
+        if ($address = self::location($lesson)) {
             $params['location'] = $address;
         }
 

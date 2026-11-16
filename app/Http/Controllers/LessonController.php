@@ -15,21 +15,25 @@ use Illuminate\Validation\Rule;
 class LessonController extends Controller
 {
     /**
-     * Book a driving lesson for a student.
+     * Book a driving lesson or a road test for a student.
      *
      * Rules:
-     *  - the student must have a package assigned;
-     *  - the lesson can't exceed the hours left in the package;
-     *  - it can't be in the past;
+     *  - driving lessons: the student must have a package with lessons left;
+     *  - road tests: need the test site; they don't use package lessons and need at least
+     *    ROAD_TEST_GAP_MINUTES free before and after (instructor and student);
+     *  - it can't be in the past nor outside the instructor's working schedule;
      *  - neither the instructor nor the student can have another lesson at the same time.
      */
     public function store(Request $request)
     {
+        $type = $request->input('type') === Lesson::TYPE_ROAD_TEST ? Lesson::TYPE_ROAD_TEST : Lesson::TYPE_LESSON;
+
         $validated = $request->validate(array_merge([
             'student_id' => ['required', 'integer', Rule::exists('students', 'id')->whereNull('deleted_at')],
-        ], $this->slotRules()));
+            'type' => ['nullable', Rule::in([Lesson::TYPE_LESSON, Lesson::TYPE_ROAD_TEST])],
+        ], $this->slotRules($type)));
 
-        return $this->saveLesson($validated, (int) $validated['student_id']);
+        return $this->saveLesson($validated, (int) $validated['student_id'], $type);
     }
 
     /**
@@ -39,28 +43,32 @@ class LessonController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validated = $request->validate($this->slotRules());
-
         $lesson = Lesson::findOrFail($id);
+        $type = $lesson->type ?: Lesson::TYPE_LESSON; // a lesson doesn't change type when rescheduled
+
+        $validated = $request->validate($this->slotRules($type));
 
         if ($lesson->status !== Lesson::STATUS_SCHEDULED) {
             return $this->fail('Solo se pueden reprogramar clases que estén programadas.');
         }
 
-        return $this->saveLesson($validated, $lesson->student_id, $lesson);
+        return $this->saveLesson($validated, $lesson->student_id, $type, $lesson);
     }
 
     public function __construct(private LessonNotifier $notifier)
     {
     }
 
-    private function slotRules(): array
+    private function slotRules(string $type): array
     {
+        $roadTest = $type === Lesson::TYPE_ROAD_TEST;
+
         return [
             'instructor_id' => ['required', 'integer', Rule::exists('instructors', 'id')->whereNull('deleted_at')],
             'date' => 'required|date_format:Y-m-d',
             'time' => 'required|date_format:H:i',
-            'duration_minutes' => ['required', 'integer', Rule::in(Lesson::DURATIONS)],
+            'duration_minutes' => ['required', 'integer', Rule::in($roadTest ? Lesson::ROAD_TEST_DURATIONS : Lesson::DURATIONS)],
+            'location' => $roadTest ? 'required|string|max:255' : 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
         ];
     }
@@ -68,7 +76,7 @@ class LessonController extends Controller
     /**
      * Create a lesson, or move an existing one ($lesson), after checking every booking rule.
      */
-    private function saveLesson(array $validated, int $studentId, ?Lesson $lesson = null)
+    private function saveLesson(array $validated, int $studentId, string $type, ?Lesson $lesson = null)
     {
         $minutes = (int) $validated['duration_minutes'];
         $start = Carbon::createFromFormat('Y-m-d H:i', $validated['date'] . ' ' . $validated['time']);
@@ -95,7 +103,7 @@ class LessonController extends Controller
                 }
             }
 
-            $error = $this->checkBookingRules($student, $instructor, $start, $end, $minutes, $lesson);
+            $error = $this->checkBookingRules($student, $instructor, $type, $start, $end, $minutes, $lesson);
             if ($error) {
                 DB::rollBack();
                 return $this->fail($error);
@@ -106,6 +114,7 @@ class LessonController extends Controller
                 'starts_at' => $start->format('Y-m-d H:i:s'),
                 'ends_at' => $end->format('Y-m-d H:i:s'),
                 'duration_minutes' => $minutes,
+                'location' => $type === Lesson::TYPE_ROAD_TEST ? trim($validated['location']) : null,
                 'notes' => $validated['notes'] ?? null,
             ];
 
@@ -125,6 +134,7 @@ class LessonController extends Controller
             } else {
                 $lesson = Lesson::create($data + [
                     'student_id' => $student->id,
+                    'type' => $type,
                     'vehicle_id' => $instructor->vehicle_id, // vehicle assigned to the instructor
                     'status' => Lesson::STATUS_SCHEDULED,
                 ]);
@@ -175,7 +185,55 @@ class LessonController extends Controller
      * Returns an error message if the booking breaks a rule, or null if it is valid.
      * $ignore is the lesson being rescheduled (its own hours and time slot don't count).
      */
-    private function checkBookingRules(Student $student, Instructor $instructor, Carbon $start, Carbon $end, int $minutes, ?Lesson $ignore): ?string
+    private function checkBookingRules(Student $student, Instructor $instructor, string $type, Carbon $start, Carbon $end, int $minutes, ?Lesson $ignore): ?string
+    {
+        if (!$instructor->worksDuring($start, $end)) {
+            return 'Ese horario está fuera del horario de trabajo de ' . trim($instructor->first_name . ' ' . $instructor->last_name)
+                . ' (' . $instructor->scheduleText() . ').';
+        }
+
+        $roadTest = $type === Lesson::TYPE_ROAD_TEST;
+
+        // Road tests don't use the package lessons
+        $error = $roadTest ? null : $this->checkPackage($student, $minutes, $ignore);
+        if ($error) {
+            return $error;
+        }
+
+        $startStr = $start->format('Y-m-d H:i:s');
+        $endStr = $end->format('Y-m-d H:i:s');
+        $others = fn (string $from, string $to) => Lesson::active()->overlapping($from, $to)
+            ->when($ignore, fn ($q) => $q->where('id', '!=', $ignore->id));
+
+        if ($others($startStr, $endStr)->where('instructor_id', $instructor->id)->exists()) {
+            return 'El instructor ya tiene una clase en ese horario.';
+        }
+
+        if ($others($startStr, $endStr)->where('student_id', $student->id)->exists()) {
+            return 'El estudiante ya tiene una clase en ese horario.';
+        }
+
+        // Free time around road tests: nothing can be closer than the gap to a road test
+        $gap = Lesson::ROAD_TEST_GAP_MINUTES;
+        $gapFrom = $start->copy()->subMinutes($gap)->format('Y-m-d H:i:s');
+        $gapTo = $end->copy()->addMinutes($gap)->format('Y-m-d H:i:s');
+        $tooClose = fn () => $others($gapFrom, $gapTo)
+            ->when(!$roadTest, fn ($q) => $q->where('type', Lesson::TYPE_ROAD_TEST));
+        $gapText = $gap % 60 === 0 ? ($gap === 60 ? '1 hora' : ($gap / 60) . ' horas') : "{$gap} minutos";
+
+        if ($tooClose()->where('instructor_id', $instructor->id)->exists()) {
+            return "El instructor necesita al menos {$gapText} libre entre un Road Test y otra clase.";
+        }
+
+        if ($tooClose()->where('student_id', $student->id)->exists()) {
+            return "El estudiante necesita al menos {$gapText} libre entre un Road Test y otra clase.";
+        }
+
+        return null;
+    }
+
+    /** Package rules for driving lessons. */
+    private function checkPackage(Student $student, int $minutes, ?Lesson $ignore): ?string
     {
         if (!$student->package_id) {
             return 'El estudiante no tiene un paquete asignado. Asígnale uno antes de agendar clases.';
@@ -194,19 +252,6 @@ class LessonController extends Controller
             return $remaining > 0
                 ? 'La clase excede las clases disponibles del paquete. ' . self::lessonsLeftText($remaining) . '.'
                 : 'El estudiante ya usó todas las clases de su paquete.';
-        }
-
-        $startStr = $start->format('Y-m-d H:i:s');
-        $endStr = $end->format('Y-m-d H:i:s');
-        $others = fn () => Lesson::active()->overlapping($startStr, $endStr)
-            ->when($ignore, fn ($q) => $q->where('id', '!=', $ignore->id));
-
-        if ($others()->where('instructor_id', $instructor->id)->exists()) {
-            return 'El instructor ya tiene una clase en ese horario.';
-        }
-
-        if ($others()->where('student_id', $student->id)->exists()) {
-            return 'El estudiante ya tiene una clase en ese horario.';
         }
 
         return null;
@@ -242,7 +287,7 @@ class LessonController extends Controller
                 'notifications' => $notified,
                 'student' => [
                     'db_id' => $lesson->student_id,
-                    'used_minutes' => (int) Lesson::active()->where('student_id', $lesson->student_id)->sum('duration_minutes'),
+                    'used_minutes' => (int) Lesson::usingPackage()->where('student_id', $lesson->student_id)->sum('duration_minutes'),
                 ],
             ]);
 

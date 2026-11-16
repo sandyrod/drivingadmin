@@ -79,6 +79,9 @@ return [
     // Minutes before a lesson for the last-minute reminder (0 disables it)
     'lesson_final_reminder_minutes' => (int) env('LESSON_FINAL_REMINDER_MINUTES', 10),
 
+    // Business name printed on invoices and receipts
+    'school_name' => env('SCHOOL_NAME', 'NY Driving Academy'),
+
     // Where lessons start (shown in the calendar event). Optional.
     'school_address' => env('SCHOOL_ADDRESS'),
 

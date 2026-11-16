@@ -63,14 +63,14 @@ class ImportStudents extends Command
                     continue;
                 }
 
-                // Email: opcional y único
+                // Email: opcional; puede repetirse
                 $email = strtolower($row['Email']);
                 if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $warnings[] = "L{$line} {$name}: email inválido '{$row['Email']}' (se guarda igual)";
                 }
                 if ($email !== '' && isset($seenEmails[$email])) {
-                    $warnings[] = "L{$line} {$name}: email {$email} repetido, se deja vacío";
-                    $email = '';
+                    // Allowed (e.g. siblings sharing a parent's email); just reported
+                    $warnings[] = "L{$line} {$name}: email {$email} repetido (se guarda igual)";
                 }
 
                 $gender = strtoupper($row['Sex']);

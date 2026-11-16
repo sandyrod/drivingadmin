@@ -9,6 +9,15 @@ class StudentPayment extends Model
 {
     use HasFactory;
 
+    /** Payment methods as shown on invoices and receipts. */
+    public const METHOD_LABELS = [
+        'Cash' => 'Efectivo',
+        'Credit Card' => 'Tarjeta de Crédito',
+        'Zelle' => 'Zelle',
+        'Venmo' => 'Venmo',
+        'Check' => 'Cheque',
+    ];
+
     protected $fillable = [
         'student_id',
         'amount',

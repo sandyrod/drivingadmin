@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::put('/students/{id}', [StudentController::class, 'update'])->name('students.update');
     Route::put('/students/{id}/package', [StudentController::class, 'assignPackage'])->name('students.package');
+    Route::get('/students/{id}/invoice', [StudentController::class, 'printInvoice'])->name('students.invoice');
 
     // Package catalog
     Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');

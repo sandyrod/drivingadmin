@@ -106,7 +106,7 @@ class Student extends Model
      */
     public function usedLessonMinutes(): int
     {
-        return (int) $this->lessons()->active()->sum('duration_minutes');
+        return (int) $this->lessons()->usingPackage()->sum('duration_minutes');
     }
 
     /**

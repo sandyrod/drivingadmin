@@ -27,7 +27,7 @@ class StudentController extends Controller
                 $query->where('is_active', true);
             },
             'packageModel',
-        ])->withSum(['lessons as used_minutes' => fn ($q) => $q->active()], 'duration_minutes')->get();
+        ])->withSum(['lessons as used_minutes' => fn ($q) => $q->usingPackage()], 'duration_minutes')->get();
 
         // Map database records to the exact structure expected by the JS dashboard
         $students = $dbStudents->map(fn ($s) => $s->toDashboardArray((int) $s->used_minutes));
@@ -62,7 +62,7 @@ class StudentController extends Controller
                 'plate' => $ins->vehicleModel ? $ins->vehicleModel->plate : '-',
                 'vehicle_id' => $ins->vehicle_id,
                 'transmission' => $ins->transmission ?? 'Automático',
-                'shift' => $ins->shift ?? 'Mañana (8am-12pm)',
+                ...$ins->scheduleArray(),
                 'status' => $ins->status ?? 'Disponible',
                 'height' => $ins->height,
                 'eye_color' => $ins->eye_color,
@@ -143,7 +143,7 @@ class StudentController extends Controller
             'state' => 'required|string|max:100',
             'zip_code' => 'required|string|max:20',
             'phone' => 'required|string|max:30',
-            'email' => 'required|email|unique:students,email',
+            'email' => 'required|email|max:255', // may repeat (e.g. siblings sharing a parent's email)
             'contract_number' => 'nullable|string|max:30|unique:students,contract_number',
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
@@ -305,7 +305,7 @@ class StudentController extends Controller
             'state' => 'required|string|max:100',
             'zip_code' => 'required|string|max:20',
             'phone' => 'required|string|max:30',
-            'email' => 'required|email|unique:students,email,' . $id,
+            'email' => 'required|email|max:255',
             'contract_number' => 'nullable|string|max:30|unique:students,contract_number,' . $id,
             'height' => 'nullable|string|max:10',
             'eye_color' => 'nullable|string|max:30',
@@ -625,6 +625,21 @@ class StudentController extends Controller
     {
         $payment = StudentPayment::with('student')->findOrFail($id);
         return view('receipt', compact('payment'));
+    }
+
+    /**
+     * Student invoice: package bought (price at purchase time), payments and balance.
+     * It is generated from the student's record, so it always shows the current figures.
+     */
+    public function printInvoice($id)
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+        $payments = $student->payments()->orderBy('payment_date')->orderBy('id')->get();
+
+        // Amount paid at enrollment (it has no payment record of its own)
+        $initialPayment = max(0, round((float) $student->paid_amount - (float) $payments->sum('amount'), 2));
+
+        return view('invoice', compact('student', 'payments', 'initialPayment'));
     }
 
     private function saveImage($base64, $subfolder, $prefix)

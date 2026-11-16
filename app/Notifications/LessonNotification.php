@@ -60,12 +60,16 @@ class LessonNotification extends Notification
             ->line($this->intro())
             ->line('**Fecha y hora:** ' . $when);
 
-        foreach (explode("\n", LessonCalendar::description($lesson, $this->role)) as $line) {
+        foreach (explode("\n", LessonCalendar::description($lesson, $this->role, false)) as $line) {
             [$label, $value] = array_pad(explode(': ', $line, 2), 2, '');
             $mail->line('**' . $label . ':** ' . $value);
         }
 
-        if ($address = config('app.school_address')) {
+        if ($lesson->isRoadTest() && $lesson->location) {
+            $mail->line('**Lugar del examen:** ' . $lesson->location)
+                ->line('[Abrir en Google Maps](' . \App\Models\Lesson::googleMapsUrl($lesson->location) . ') · '
+                    . '[Abrir en Apple Maps (iPhone)](' . \App\Models\Lesson::appleMapsUrl($lesson->location) . ')');
+        } elseif ($address = config('app.school_address')) {
             $mail->line('**Lugar:** ' . $address);
         }
 
@@ -98,28 +102,57 @@ class LessonNotification extends Notification
             ? 'con ' . LessonCalendar::studentName($this->lesson)
             : 'con el instructor ' . LessonCalendar::instructorName($this->lesson);
 
+        $what = $this->what();
+        $place = $this->lesson->isRoadTest() && $this->lesson->location
+            ? ' Lugar: ' . $this->lesson->location . ' ' . \App\Models\Lesson::googleMapsUrl($this->lesson->location)
+            : '';
+
         return config('app.name') . ': ' . match ($this->event) {
-            self::SCHEDULED => 'Clase de manejo agendada ' . $who . ' el ' . $this->whenText() . '.',
-            self::RESCHEDULED => 'Tu clase de manejo fue reprogramada ' . $who . ' para el ' . $this->whenText() . '.',
-            self::CANCELLED => 'Tu clase de manejo ' . $who . ' del ' . $this->whenText() . ' fue cancelada.',
-            self::FINAL_REMINDER => 'Tu clase de manejo ' . $who . ' empieza en ' . $this->minutesLeft() . ' minutos (' . $this->startTime() . ').',
-            default => 'Recordatorio: tienes clase de manejo ' . $who . ' el ' . $this->whenText() . '.',
+            self::SCHEDULED => ucfirst($what) . ' ' . $this->g('agendada', 'agendado') . ' ' . $who . ' el ' . $this->whenText() . '.' . $place,
+            self::RESCHEDULED => ucfirst($this->g('reprogramada', 'reprogramado')) . ': ' . $what . ' ' . $who . ' para el ' . $this->whenText() . '.' . $place,
+            self::CANCELLED => ucfirst($this->g('cancelada', 'cancelado')) . ': ' . $what . ' ' . $who . ' del ' . $this->whenText() . '.',
+            self::FINAL_REMINDER => ucfirst($what) . ' ' . $who . ' empieza en ' . $this->minutesLeft() . ' minutos (' . $this->startTime() . ').' . $place,
+            default => 'Recordatorio: ' . $what . ' ' . $who . ' el ' . $this->whenText() . '.' . $place,
         };
+    }
+
+    /** Spanish agreement: "clase" is feminine, "Road Test" masculine. */
+    private function g(string $feminine, string $masculine): string
+    {
+        return $this->lesson->isRoadTest() ? $masculine : $feminine;
+    }
+
+    /** "clase de manejo" or "Road Test" */
+    private function what(): string
+    {
+        return $this->lesson->isRoadTest() ? 'Road Test' : 'clase de manejo';
     }
 
     private function subject(): string
     {
+        $what = ucfirst($this->what());
+
         return match ($this->event) {
-            self::SCHEDULED => 'Clase de manejo agendada - ' . $this->whenText(),
-            self::RESCHEDULED => 'Clase de manejo reprogramada - ' . $this->whenText(),
-            self::CANCELLED => 'Clase de manejo cancelada - ' . $this->whenText(),
-            self::FINAL_REMINDER => 'Tu clase de manejo empieza en ' . $this->minutesLeft() . ' minutos',
-            default => 'Recordatorio: clase de manejo ' . $this->whenText(),
+            self::SCHEDULED => $what . ' ' . $this->g('agendada', 'agendado') . ' - ' . $this->whenText(),
+            self::RESCHEDULED => $what . ' ' . $this->g('reprogramada', 'reprogramado') . ' - ' . $this->whenText(),
+            self::CANCELLED => $what . ' ' . $this->g('cancelada', 'cancelado') . ' - ' . $this->whenText(),
+            self::FINAL_REMINDER => $what . ': empieza en ' . $this->minutesLeft() . ' minutos',
+            default => 'Recordatorio: ' . $this->what() . ' ' . $this->whenText(),
         };
     }
 
     private function intro(): string
     {
+        if ($this->lesson->isRoadTest()) {
+            return match ($this->event) {
+                self::SCHEDULED => $this->role === 'instructor' ? 'Se te asignó un Road Test (examen de manejo).' : 'Tu Road Test (examen de manejo) quedó agendado.',
+                self::RESCHEDULED => 'El Road Test cambió. Estos son los nuevos datos:',
+                self::CANCELLED => 'El siguiente Road Test fue cancelado:',
+                self::FINAL_REMINDER => 'Tu Road Test empieza en ' . $this->minutesLeft() . ' minutos.',
+                default => 'Te recordamos que tienes un Road Test (examen de manejo) próximamente.',
+            };
+        }
+
         return match ($this->event) {
             self::SCHEDULED => $this->role === 'instructor' ? 'Se te asignó una nueva clase de manejo.' : 'Tu clase de manejo quedó agendada.',
             self::RESCHEDULED => 'La clase de manejo cambió. Estos son los nuevos datos:',

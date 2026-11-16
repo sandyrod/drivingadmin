@@ -40,6 +40,11 @@ class InstructorController extends Controller
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'transmission' => 'nullable|string|max:20',
             'shift' => 'nullable|string|max:50',
+            // Working schedule (optional: without it the instructor can be booked at any time)
+            'work_days' => 'nullable|array|min:1',
+            'work_days.*' => 'integer|between:1,7|distinct',
+            'work_start' => 'nullable|required_with:work_days|date_format:H:i',
+            'work_end' => 'nullable|required_with:work_days|date_format:H:i|after:work_start',
 
             // License details (optional)
             'license_number' => 'nullable|string|max:50|unique:instructor_licenses,license_number',
@@ -73,6 +78,7 @@ class InstructorController extends Controller
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
                 'shift' => $validated['shift'] ?? null,
+                ...self::scheduleFields($validated),
                 'status' => 'Disponible',
             ]);
 
@@ -120,7 +126,7 @@ class InstructorController extends Controller
                     'vehicle' => $assignedVehicle ? $assignedVehicle->brand : 'Sin Asignar',
                     'plate' => $assignedVehicle ? $assignedVehicle->plate : '-',
                     'transmission' => $instructor->transmission ?? 'Automático',
-                    'shift' => $instructor->shift ?? 'Mañana (8am-12pm)',
+                    ...$instructor->scheduleArray(),
                     'status' => $instructor->status,
                     'height' => $instructor->height,
                     'eye_color' => $instructor->eye_color,
@@ -178,6 +184,11 @@ class InstructorController extends Controller
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'transmission' => 'nullable|string|max:20',
             'shift' => 'nullable|string|max:50',
+            // Working schedule (optional: without it the instructor can be booked at any time)
+            'work_days' => 'nullable|array|min:1',
+            'work_days.*' => 'integer|between:1,7|distinct',
+            'work_start' => 'nullable|required_with:work_days|date_format:H:i',
+            'work_end' => 'nullable|required_with:work_days|date_format:H:i|after:work_start',
 
             // License details (optional)
             'license_number' => 'nullable|string|max:50|unique:instructor_licenses,license_number,' . ($instructor->activeLicense ? $instructor->activeLicense->id : 'NULL'),
@@ -221,6 +232,7 @@ class InstructorController extends Controller
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
                 'shift' => $validated['shift'] ?? null,
+                ...self::scheduleFields($validated),
             ]);
 
             // Update or create license
@@ -317,7 +329,7 @@ class InstructorController extends Controller
                     'plate' => $assignedVehicle ? $assignedVehicle->plate : '-',
                     'vehicle_id' => $instructor->vehicle_id,
                     'transmission' => $instructor->transmission ?? 'Automático',
-                    'shift' => $instructor->shift ?? 'Mañana (8am-12pm)',
+                    ...$instructor->scheduleArray(),
                     'status' => $instructor->status,
                     'height' => $instructor->height,
                     'eye_color' => $instructor->eye_color,
@@ -373,5 +385,18 @@ class InstructorController extends Controller
     private function deleteOldImage($url)
     {
         ImageUploads::delete($url);
+    }
+
+    /** Working schedule columns from the validated request. */
+    private static function scheduleFields(array $validated): array
+    {
+        $days = array_map('intval', $validated['work_days'] ?? []);
+        sort($days);
+
+        return [
+            'work_days' => $days ? implode(',', $days) : null,
+            'work_start' => $days ? $validated['work_start'] : null,
+            'work_end' => $days ? $validated['work_end'] : null,
+        ];
     }
 }
