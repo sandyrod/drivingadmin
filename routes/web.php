@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\InstructorPortalController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\VehicleController;
@@ -17,6 +18,13 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+// ---------- Instructor "Mis clases" (personal link, no login) ----------
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/i/{token}', [InstructorPortalController::class, 'show'])->name('instructor.portal');
+    Route::post('/i/{token}/lessons/{lessonId}', [InstructorPortalController::class, 'updateStatus'])
+        ->whereNumber('lessonId')->name('instructor.portal.status');
+});
 
 // ---------- Admin panel (requires a logged-in user) ----------
 Route::middleware('auth')->group(function () {
@@ -50,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/instructors', [InstructorController::class, 'store'])->name('instructors.store');
     Route::delete('/instructors/{id}', [InstructorController::class, 'destroy'])->name('instructors.destroy');
     Route::put('/instructors/{id}', [InstructorController::class, 'update'])->name('instructors.update');
+    Route::post('/instructors/{id}/portal-link', [InstructorController::class, 'portalLink'])->name('instructors.portal-link');
 
     Route::post('/vehicles', [VehicleController::class, 'store'])->name('vehicles.store');
     Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');

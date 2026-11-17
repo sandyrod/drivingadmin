@@ -2644,7 +2644,16 @@
                         <td class="${SHEET_TD}">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${ins.status === 'Disponible' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}">${esc(ins.status)}</span>
                         </td>
-                        <td class="px-4 py-2.5 text-center space-x-1">
+                        <td class="px-4 py-2.5 text-center space-x-1 whitespace-nowrap">
+                            <button onclick="instructorPortalLink(${ins.db_id}, 'copy')" class="bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Copiar enlace 'Mis clases'">
+                                <i class="fa-solid fa-link"></i>
+                            </button>
+                            <button onclick="instructorPortalLink(${ins.db_id}, 'send')" class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Enviar enlace 'Mis clases' por correo/SMS">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                            <button onclick="instructorPortalLink(${ins.db_id}, 'regenerate')" class="bg-slate-500/10 text-slate-400 hover:bg-slate-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Generar enlace nuevo (el anterior deja de funcionar)">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
                             <button onclick="editInstructor('${ins.id}')" class="bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2 py-1 rounded text-[10px] font-bold transition" title="Editar">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
@@ -3515,6 +3524,33 @@
             apiRequest(`{{ url('students') }}/${student.db_id}/notes/${noteId}`, 'DELETE')
                 .then(res => saveStudentNotes(student, res))
                 .catch(err => showToast(err.message, 'warning'));
+        }
+
+        // Instructor's personal "Mis clases" link (marks lessons as completed, no login)
+        function instructorPortalLink(instructorDbId, mode) {
+            const ins = instructors.find(i => i.db_id === instructorDbId);
+            if (!ins) return;
+            if (mode === 'send' && !confirm(`¿Enviar a ${ins.name} su enlace "Mis clases" por correo/SMS?`)) return;
+            if (mode === 'regenerate' && !confirm(`¿Generar un enlace nuevo para ${ins.name}? El enlace anterior dejará de funcionar y habrá que enviarle el nuevo.`)) return;
+
+            apiRequest(`{{ url('instructors') }}/${instructorDbId}/portal-link`, 'POST', {
+                send: mode !== 'copy',
+                regenerate: mode === 'regenerate',
+            }).then(res => {
+                if (mode === 'copy' || mode === 'regenerate') {
+                    // The clipboard API only works over https; otherwise show the link to copy by hand
+                    const manual = () => prompt('Copia el enlace "Mis clases":', res.url);
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(res.url)
+                            .then(() => showToast('Enlace "Mis clases" copiado. Pégalo en WhatsApp o SMS al instructor.', 'success'))
+                            .catch(manual);
+                    } else {
+                        manual();
+                    }
+                }
+                if (res.sent.length) showToast(`Enlace enviado a ${ins.name} por ${res.sent.join(' y ')}.`, 'success');
+                if (res.failed) showToast(res.failed, 'warning');
+            }).catch(err => showToast(err.message, 'warning'));
         }
 
         // Invoice: package bought, all the student's payments and the balance

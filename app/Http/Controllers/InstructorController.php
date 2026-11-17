@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Instructor;
 use App\Models\InstructorLicense;
+use App\Notifications\InstructorPortalLink;
 use App\Support\ImageUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class InstructorController extends Controller
 {
@@ -398,5 +400,37 @@ class InstructorController extends Controller
             'work_start' => $days ? $validated['work_start'] : null,
             'work_end' => $days ? $validated['work_end'] : null,
         ];
+    }
+
+    /**
+     * Personal "Mis clases" link of the instructor: returns it and optionally sends it
+     * by email / SMS. "regenerate" creates a new link (the old one stops working).
+     */
+    public function portalLink(Request $request, $id)
+    {
+        $instructor = Instructor::findOrFail($id);
+        $url = $instructor->portalUrl($request->boolean('regenerate'));
+
+        $sent = [];
+        $failed = null;
+        if ($request->boolean('send')) {
+            $route = Notification::route('mail', $instructor->email)->route('sms', $instructor->phone);
+            $notification = new InstructorPortalLink($instructor, $url);
+            $channels = $notification->via($route);
+
+            if (!$channels) {
+                $failed = 'El instructor no tiene correo ni teléfono válido.';
+            } else {
+                try {
+                    $route->notifyNow($notification);
+                    $sent = array_map(fn ($c) => $c === 'mail' ? 'correo' : 'SMS', $channels);
+                } catch (\Throwable $e) {
+                    Log::error('Error enviando enlace Mis clases: ' . $e->getMessage());
+                    $failed = 'No se pudo enviar el enlace. Revisa la configuración de correo/SMS.';
+                }
+            }
+        }
+
+        return response()->json(['success' => true, 'url' => $url, 'sent' => $sent, 'failed' => $failed]);
     }
 }

@@ -73,6 +73,11 @@ class LessonNotification extends Notification
             $mail->line('**Lugar:** ' . $address);
         }
 
+        // Instructors: link to mark the lesson as completed after it
+        if ($this->role === 'instructor' && !$cancel && $lesson->instructor) {
+            $mail->line('Al terminar la clase márcala como completada en [Mis clases](' . $lesson->instructor->portalUrl() . ').');
+        }
+
         $mail->salutation(config('app.name'));
 
         // Reminders are about a lesson that is already in the calendar: no new invitation

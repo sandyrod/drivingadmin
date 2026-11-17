@@ -42,6 +42,8 @@ class Instructor extends Model
         'vehicle_id',
     ];
 
+    protected $hidden = ['portal_token'];
+
     /** Short Spanish names of the ISO days of the week (1 = Monday). */
     public const DAY_NAMES = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'];
 
@@ -145,5 +147,23 @@ class Instructor extends Model
     public function activeLicense()
     {
         return $this->hasOne(InstructorLicense::class)->where('is_active', true);
+    }
+
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class);
+    }
+
+    /**
+     * Personal "Mis clases" link where the instructor marks lessons as completed / no-show.
+     * The token is created the first time; $regenerate invalidates the previous link.
+     */
+    public function portalUrl(bool $regenerate = false): string
+    {
+        if ($regenerate || !$this->portal_token) {
+            $this->forceFill(['portal_token' => \Illuminate\Support\Str::random(48)])->save();
+        }
+
+        return route('instructor.portal', $this->portal_token);
     }
 }
