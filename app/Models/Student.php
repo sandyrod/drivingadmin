@@ -40,7 +40,59 @@ class Student extends Model
         'paid_amount',
         'debt_amount',
         'status',
+        // Extra profile data
+        'suffix',
+        'apt',
+        'other_phone',
+        'other_phone_desc',
+        'secondary_email',
+        'parent_name',
+        'parent_phone',
+        'high_school',
+        'restrictions',
+        'endorsements',
+        'certificate_number',
+        'certificate_expiry',
+        'pickup_location',
+        'preferred_instructor_id',
+        'is_problematic',
     ];
+
+    /**
+     * Profile fields edited from the student form, with their validation rules
+     * (shared by create and update).
+     */
+    public const PROFILE_RULES = [
+        'suffix' => 'nullable|string|max:10',
+        'apt' => 'nullable|string|max:20',
+        'other_phone' => 'nullable|string|max:30',
+        'other_phone_desc' => 'nullable|string|max:50',
+        'secondary_email' => 'nullable|email|max:255',
+        'parent_name' => 'nullable|string|max:150',
+        'parent_phone' => 'nullable|string|max:30',
+        'high_school' => 'nullable|string|max:150',
+        'restrictions' => 'nullable|string|max:100',
+        'endorsements' => 'nullable|string|max:100',
+        'certificate_number' => 'nullable|string|max:50',
+        'certificate_expiry' => 'nullable|date',
+        'pickup_location' => 'nullable|string|max:255',
+        'preferred_instructor_id' => 'nullable|integer|exists:instructors,id',
+        'is_problematic' => 'boolean',
+    ];
+
+    /**
+     * The validated PROFILE_RULES values ready to be saved (missing keys become null / false).
+     */
+    public static function profileData(array $validated): array
+    {
+        $data = [];
+        foreach (array_keys(self::PROFILE_RULES) as $key) {
+            $data[$key] = $validated[$key] ?? null;
+        }
+        $data['is_problematic'] = (bool) ($validated['is_problematic'] ?? false);
+
+        return $data;
+    }
 
     /**
      * Get the licenses for the student.
@@ -64,6 +116,19 @@ class Student extends Model
     public function payments()
     {
         return $this->hasMany(StudentPayment::class)->orderBy('payment_date', 'desc');
+    }
+
+    /**
+     * Internal notes about the student (newest first).
+     */
+    public function notes()
+    {
+        return $this->hasMany(StudentNote::class)->latest()->orderByDesc('id');
+    }
+
+    public function preferredInstructor()
+    {
+        return $this->belongsTo(Instructor::class, 'preferred_instructor_id');
     }
 
     /**
@@ -149,6 +214,22 @@ class Student extends Model
             'eye_color' => $this->eye_color,
             'is_organ_donor' => (bool) $this->is_organ_donor,
             'student_photo_url' => $this->student_photo_url,
+            'suffix' => $this->suffix,
+            'apt' => $this->apt,
+            'other_phone' => $this->other_phone,
+            'other_phone_desc' => $this->other_phone_desc,
+            'secondary_email' => $this->secondary_email,
+            'parent_name' => $this->parent_name,
+            'parent_phone' => $this->parent_phone,
+            'high_school' => $this->high_school,
+            'restrictions' => $this->restrictions,
+            'endorsements' => $this->endorsements,
+            'certificate_number' => $this->certificate_number,
+            'certificate_expiry' => $this->certificate_expiry ? substr((string) $this->certificate_expiry, 0, 10) : null,
+            'pickup_location' => $this->pickup_location,
+            'preferred_instructor_id' => $this->preferred_instructor_id,
+            'is_problematic' => (bool) $this->is_problematic,
+            'notes' => $this->notes->map->toDashboardArray()->values()->all(),
             'license' => $activeLicense ? [
                 'license_number' => $activeLicense->license_number,
                 'expiration_date' => $activeLicense->expiration_date,

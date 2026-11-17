@@ -29,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/students/{id}', [StudentController::class, 'update'])->name('students.update');
     Route::put('/students/{id}/package', [StudentController::class, 'assignPackage'])->name('students.package');
     Route::get('/students/{id}/invoice', [StudentController::class, 'printInvoice'])->name('students.invoice');
+    Route::post('/students/{id}/notes', [StudentController::class, 'storeNote'])->name('students.notes.store');
+    Route::delete('/students/{id}/notes/{noteId}', [StudentController::class, 'destroyNote'])->name('students.notes.destroy');
 
     // Package catalog
     Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');

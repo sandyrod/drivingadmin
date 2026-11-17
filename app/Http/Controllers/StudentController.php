@@ -27,6 +27,7 @@ class StudentController extends Controller
                 $query->where('is_active', true);
             },
             'packageModel',
+            'notes.user',
         ])->withSum(['lessons as used_minutes' => fn ($q) => $q->usingPackage()], 'duration_minutes')->get();
 
         // Map database records to the exact structure expected by the JS dashboard
@@ -161,7 +162,7 @@ class StudentController extends Controller
             'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number',
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
-        ]);
+        ] + Student::PROFILE_RULES);
 
         $package = Package::where('is_active', true)->where('name', $validated['package'])->first();
         if (!$package) {
@@ -194,6 +195,7 @@ class StudentController extends Controller
                 'student_photo_url' => $student_photo_url,
                 'transmission' => $validated['transmission'],
                 'paid_amount' => $validated['paid_amount'],
+                ...Student::profileData($validated),
             ]);
             // Copies name, price and lessons of the package at purchase time
             $student->purchasePackage($package);
@@ -323,7 +325,7 @@ class StudentController extends Controller
             'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number,' . ($student->activeLicense ? $student->activeLicense->id : 'NULL'),
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
-        ]);
+        ] + Student::PROFILE_RULES);
 
         // Same package as before -> keep the price/lessons it was bought with.
         // Different package -> it must be an active catalog package (new purchase).
@@ -371,6 +373,7 @@ class StudentController extends Controller
                 'student_photo_url' => $student_photo_url,
                 'transmission' => $validated['transmission'],
                 'paid_amount' => $validated['paid_amount'],
+                ...Student::profileData($validated),
             ]);
 
             if ($newPackage) {
@@ -640,6 +643,33 @@ class StudentController extends Controller
         $initialPayment = max(0, round((float) $student->paid_amount - (float) $payments->sum('amount'), 2));
 
         return view('invoice', compact('student', 'payments', 'initialPayment'));
+    }
+
+    /**
+     * Add an internal note to the student (returns all the student's notes).
+     */
+    public function storeNote(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+        $validated = $request->validate(['body' => 'required|string|max:2000']);
+
+        $student->notes()->create(['body' => trim($validated['body']), 'user_id' => $request->user()?->id]);
+
+        return response()->json([
+            'success' => true,
+            'notes' => $student->notes()->with('user')->get()->map->toDashboardArray()->values(),
+        ]);
+    }
+
+    public function destroyNote($id, $noteId)
+    {
+        $student = Student::findOrFail($id);
+        $student->notes()->whereKey($noteId)->firstOrFail()->delete();
+
+        return response()->json([
+            'success' => true,
+            'notes' => $student->notes()->with('user')->get()->map->toDashboardArray()->values(),
+        ]);
     }
 
     private function saveImage($base64, $subfolder, $prefix)

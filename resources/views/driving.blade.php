@@ -90,298 +90,321 @@
     </div>
 
     <!-- ================= PANELS: REGISTRO/INSCRIPCION ================= -->
-    <div id="view-inscripcion" class="hidden max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div class="p-8 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-slate-800">
-            <h3 class="text-lg font-bold text-slate-100" id="student-form-title">Ficha de Inscripción Digital</h3>
-            <p class="text-xs text-slate-400 mt-1" id="student-form-subtitle">Crea nuevos expedientes que se sincronizarán directamente con la base de datos.</p>
-        </div>
-
-        <form id="student-form" class="p-8 space-y-6" onsubmit="handleStudentSubmit(event)">
-            <!-- 1. Datos Personales -->
-            <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Información del Estudiante</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">N° de Contrato</label>
-                    <input type="text" id="stu-contract-number" maxlength="30"
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. 8293">
+    <div id="view-inscripcion" class="hidden space-y-4">
+        <form id="student-form" onsubmit="handleStudentSubmit(event)" autocomplete="off">
+            <!-- Header: name, flags and balance -->
+            <div class="flex flex-wrap items-center gap-3 mb-4">
+                <div class="flex-1 min-w-[220px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500" id="student-form-title">Nuevo estudiante</p>
+                    <h2 class="text-2xl font-black text-slate-100 uppercase leading-tight" id="sf-name">Nuevo estudiante</h2>
+                    <p class="text-xs text-slate-500 mt-0.5" id="student-form-subtitle">Completa la ficha y presiona Guardar.</p>
                 </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Apellido <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-last-name" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Pérez">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Primer Nombre <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-first-name" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Carlos">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Segundo Nombre</label>
-                    <input type="text" id="stu-middle-name"
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Andrés">
-                </div>
+                <label class="sf-flag" title="Marcar al estudiante como problemático">
+                    <input type="checkbox" id="stu-problematic" class="hidden" onchange="renderProblematicFlag()">
+                    <i class="fa-regular fa-face-frown"></i> <span>Problemático</span>
+                </label>
+                <span id="sf-balance-badge" class="hidden px-3 py-1 rounded-full text-sm font-black"></span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha de Nacimiento <span class="text-amber-500">*</span></label>
-                    <input type="date" id="stu-birth-date" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Género <span class="text-amber-500">*</span></label>
-                    <select id="stu-gender" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                        <option value="M">Masculino</option>
-                        <option value="F">Femenino</option>
-                        <option value="O">Otro</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico <span class="text-amber-500">*</span></label>
-                    <input type="email" id="stu-email" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="ejemplo@correo.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Teléfono de Contacto <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-phone" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. +1 914-555-0199">
-                </div>
-            </div>
-
-            <!-- 2. Ubicación -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dirección de Residencia <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-address" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. 123 Main St">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ciudad <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-city" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. Queens">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Estado <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-state" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        value="NY" placeholder="Ej. NY">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Cód. Postal <span class="text-amber-500">*</span></label>
-                    <input type="text" id="stu-zip-code" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                        placeholder="Ej. 11101">
-                </div>
-            </div>
-
-            <!-- 3. Características DMV Físicas -->
-            <div class="border-t border-slate-800/60 pt-6">
-                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Detalles DMV Físicos (Opcional)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Estatura</label>
-                        <input type="text" id="stu-height"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                            placeholder="Ej. 5'11&quot; o 1.80m">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Color de Ojos</label>
-                        <select id="stu-eye-color"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                            <option value="">Selecciona...</option>
-                            <option value="BLU">Azul (BLU)</option>
-                            <option value="BRN">Marrón (BRN)</option>
-                            <option value="GRN">Verde (GRN)</option>
-                            <option value="HAZ">Avellana (HAZ)</option>
-                            <option value="GRY">Gris (GRY)</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center h-full pt-6">
-                        <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 w-full">
-                            <input type="checkbox" id="stu-organ-donor" value="1" class="accent-amber-500">
-                            <span class="text-sm">¿Donante de Órganos?</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="mt-6">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de Perfil (Opcional)</label>
-                    <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition text-center" id="stu-photo-zone" onclick="document.getElementById('stu-photo-input').click()">
-                        <input type="file" id="stu-photo-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')">
-                        <input type="hidden" id="stu-photo-base64" value="">
-                        
-                        <!-- Placeholder State -->
-                        <div class="upload-placeholder flex flex-col items-center gap-2">
-                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
-                            <span class="text-xs text-slate-400 font-medium">Subir Foto de Perfil</span>
-                            <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
-                        </div>
-                        
-                        <!-- Preview State -->
-                        <img id="stu-photo-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Vista previa">
-                        
-                        <!-- Remove Button -->
-                        <button type="button" onclick="clearUpload(event, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')" 
-                            class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="stu-photo-remove">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Licencia o Permiso NY DMV -->
-            <div class="border-t border-slate-800/60 pt-6">
-                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Licencia o Permiso de Aprendizaje NY DMV (Opcional)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nº de Documento (Permit/License)</label>
-                        <input type="text" id="lic-number"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm"
-                            placeholder="Ej. 123-456-789">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fecha de Expiración</label>
-                        <input type="date" id="lic-expiration"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Clase de Documento</label>
-                        <select id="lic-class"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                            <option value="">Selecciona clase...</option>
-                            <option value="Class D">Class D (Passenger)</option>
-                            <option value="Class DJ">Class DJ (Junior Operator)</option>
-                            <option value="Class E">Class E (For-Hire Taxi/Limo)</option>
-                            <option value="Class M">Class M (Motorcycle)</option>
-                            <option value="Commercial">Commercial (CDL)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Anverso)</label>
-                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="lic-front-zone" onclick="document.getElementById('lic-front-input').click()">
-                            <input type="file" id="lic-front-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')">
-                            <input type="hidden" id="lic-front-base64" value="">
-                            
-                            <!-- Placeholder -->
-                            <div class="upload-placeholder flex flex-col items-center gap-2">
-                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
-                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Anverso)</span>
-                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
-                            </div>
-                            
-                            <!-- Preview -->
-                            <img id="lic-front-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Anverso">
-                            
-                            <!-- Remove Button -->
-                            <button type="button" onclick="clearUpload(event, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')" 
-                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="lic-front-remove">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Foto de la Licencia (Reverso)</label>
-                        <div class="relative group border-2 border-dashed border-slate-800 hover:border-amber-500/60 bg-slate-950 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer min-h-[140px] transition duration-200 text-center" id="lic-back-zone" onclick="document.getElementById('lic-back-input').click()">
-                            <input type="file" id="lic-back-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')">
-                            <input type="hidden" id="lic-back-base64" value="">
-                            
-                            <!-- Placeholder -->
-                            <div class="upload-placeholder flex flex-col items-center gap-2">
-                                <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
-                                <span class="text-xs text-slate-400 font-medium">Subir Licencia (Reverso)</span>
-                                <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (Máx. 4MB)</span>
-                            </div>
-                            
-                            <!-- Preview -->
-                            <img id="lic-back-preview" src="" class="hidden max-h-[120px] rounded-lg object-contain shadow-md" alt="Licencia Reverso">
-                            
-                            <!-- Remove Button -->
-                            <button type="button" onclick="clearUpload(event, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')" 
-                                class="absolute top-2 right-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-slate-950 p-1.5 rounded-lg text-xs transition z-10 hidden" id="lic-back-remove">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Paquete y Transmisión -->
-            <div class="border-t border-slate-800/60 pt-6">
-                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Servicios Contratados</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Paquetes NY Driving School <span class="text-amber-500">*</span></label>
-                        <select id="stu-plan" onchange="updatePlanCost()" required
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm">
-                            <!-- Options generated by renderPlanOptions() from the package catalog -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tipo de Transmisión <span class="text-amber-500">*</span></label>
-                        <div class="flex gap-4 mt-1">
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 flex-1">
-                                <input type="radio" name="stu-transmission" value="Automático" checked class="accent-amber-500">
-                                <span class="text-sm">Automático</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-4 py-2.5 rounded-lg border border-slate-800 hover:border-amber-500/60 flex-1">
-                                <input type="radio" name="stu-transmission" value="Mecánico" class="accent-amber-500">
-                                <span class="text-sm">Mecánico (Stick Shift)</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. Costos y Abonos -->
-            <div class="border-t border-slate-800/60 pt-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Costo Total del Plan ($)</label>
-                        <input type="number" id="stu-cost" readonly
-                            class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-500 cursor-not-allowed text-sm font-bold"
-                            value="350">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Pago Inicial (Abono / Total)</label>
-                        <input type="number" id="stu-paid" oninput="calculateInscripcionDebt()" required
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition text-sm font-bold"
-                            placeholder="Ej. 200">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Saldo Pendiente (Deuda)</label>
-                        <input type="number" id="stu-debt" readonly
-                            class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-red-500 cursor-not-allowed text-sm font-bold"
-                            value="0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Lessons taken / left (only when editing an existing student) -->
-            <div id="stu-lessons-summary" class="hidden border-t border-slate-800/60 pt-6"></div>
-
-            <div class="border-t border-slate-800/60 pt-6 flex justify-end gap-3">
-                <button type="reset" class="px-5 py-2.5 rounded-lg text-sm font-medium border border-slate-800 hover:bg-slate-800 transition">Reiniciar Formulario</button>
-                <button type="submit" id="student-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+            <!-- Action bar -->
+            <div class="flex flex-wrap items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 mb-4">
+                <button type="submit" id="student-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2">
                     <i class="fa-solid fa-save" id="student-submit-btn-icon"></i> <span id="student-submit-btn-text">Registrar Alumno</span>
                 </button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('agenda')"><i class="fa-solid fa-calendar-plus"></i> Agendar clase</button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('road_test')"><i class="fa-solid fa-road"></i> Road Test</button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('pay')"><i class="fa-solid fa-dollar-sign"></i> Registrar pago</button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('invoice')"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('email')"><i class="fa-solid fa-envelope"></i> Email</button>
+                <button type="button" class="sf-action sf-needs-student" onclick="studentFormAction('text')"><i class="fa-solid fa-comment-sms"></i> Text</button>
+                <span class="flex-1"></span>
+                <button type="button" class="sf-action" onclick="switchTab('inscripcion')" title="Limpiar y registrar otro estudiante"><i class="fa-solid fa-user-plus"></i> Nuevo</button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <!-- Tabs -->
+                <div class="flex gap-1 px-4 pt-2 border-b border-slate-800 overflow-x-auto">
+                    <button type="button" data-sf-tab="profile" onclick="switchStudentFormTab('profile')" class="sf-tab">Profile</button>
+                    <button type="button" data-sf-tab="lessons" onclick="switchStudentFormTab('lessons')" class="sf-tab sf-needs-student">Lessons <span id="sf-lessons-count"></span></button>
+                    <button type="button" data-sf-tab="payments" onclick="switchStudentFormTab('payments')" class="sf-tab sf-needs-student">Receipts <span id="sf-payments-count"></span></button>
+                    <button type="button" data-sf-tab="notes" onclick="switchStudentFormTab('notes')" class="sf-tab sf-needs-student">Notes <span id="sf-notes-count"></span></button>
+                </div>
+
+                <!-- ===== PROFILE ===== -->
+                <div id="sf-tab-profile" class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+                    <!-- Column 1: permit + name + address -->
+                    <div class="sf-card">
+                        <div class="sf-field">
+                            <span class="sf-label">Permit Number</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="lic-number" class="sf-input" maxlength="50" placeholder="123-456-789">
+                                <button type="button" onclick="copyToClipboard(document.getElementById('lic-number').value)" class="text-slate-500 hover:text-amber-500" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <label class="sf-field"><span class="sf-label">Permit Expiry</span>
+                            <input type="date" id="lic-expiration" class="sf-input" onchange="renderExpiryWarnings()">
+                            <span id="sf-permit-expired" class="hidden sf-warn">Vencido</span></label>
+                        <label class="sf-field"><span class="sf-label">Permit Class</span>
+                            <select id="lic-class" class="sf-input">
+                                <option value="">—</option>
+                                <option value="Class D">Class D (Passenger)</option>
+                                <option value="Class DJ">Class DJ (Junior Operator)</option>
+                                <option value="Class E">Class E (For-Hire Taxi/Limo)</option>
+                                <option value="Class M">Class M (Motorcycle)</option>
+                                <option value="Commercial">Commercial (CDL)</option>
+                            </select></label>
+                        <label class="sf-field"><span class="sf-label">Certificate # (5 horas / MV-278)</span>
+                            <input type="text" id="stu-certificate-number" class="sf-input" maxlength="50"></label>
+                        <label class="sf-field"><span class="sf-label">Certificate Expiry</span>
+                            <input type="date" id="stu-certificate-expiry" class="sf-input" onchange="renderExpiryWarnings()">
+                            <span id="sf-certificate-expired" class="hidden sf-warn">Vencido</span></label>
+                        <label class="sf-field"><span class="sf-label">Last Name <b>*</b></span>
+                            <input type="text" id="stu-last-name" required maxlength="100" class="sf-input sf-upper" oninput="renderStudentFormName()"></label>
+                        <label class="sf-field"><span class="sf-label">First Name <b>*</b></span>
+                            <input type="text" id="stu-first-name" required maxlength="100" class="sf-input sf-upper" oninput="renderStudentFormName()"></label>
+                        <label class="sf-field"><span class="sf-label">Middle Name</span>
+                            <input type="text" id="stu-middle-name" maxlength="100" class="sf-input sf-upper" oninput="renderStudentFormName()"></label>
+                        <label class="sf-field"><span class="sf-label">Suffix</span>
+                            <input type="text" id="stu-suffix" maxlength="10" class="sf-input sf-upper" placeholder="Jr, Sr, III"></label>
+                        <label class="sf-field"><span class="sf-label">Street Address <b>*</b></span>
+                            <input type="text" id="stu-address" required maxlength="255" class="sf-input sf-upper"></label>
+                        <label class="sf-field"><span class="sf-label">Apt. #</span>
+                            <input type="text" id="stu-apt" maxlength="20" class="sf-input sf-upper"></label>
+                        <label class="sf-field"><span class="sf-label">City <b>*</b></span>
+                            <input type="text" id="stu-city" required maxlength="100" class="sf-input sf-upper"></label>
+                        <label class="sf-field"><span class="sf-label">State <b>*</b></span>
+                            <input type="text" id="stu-state" required maxlength="100" value="NY" class="sf-input sf-upper"></label>
+                        <label class="sf-field"><span class="sf-label">Zip Code <b>*</b></span>
+                            <input type="text" id="stu-zip-code" required maxlength="20" class="sf-input"></label>
+                    </div>
+
+                    <!-- Column 2: contact + personal -->
+                    <div class="space-y-4">
+                        <div class="sf-card">
+                            <div class="sf-field">
+                                <span class="sf-label">Mobile <b>*</b></span>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" id="stu-phone" required maxlength="30" class="sf-input" placeholder="347-555-0199">
+                                    <a id="sf-call-link" href="#" class="text-slate-500 hover:text-amber-500" title="Llamar"><i class="fa-solid fa-phone"></i></a>
+                                </div>
+                            </div>
+                            <label class="sf-field"><span class="sf-label">Other Phone</span>
+                                <input type="text" id="stu-other-phone" maxlength="30" class="sf-input"></label>
+                            <label class="sf-field"><span class="sf-label">Other Phone Desc</span>
+                                <input type="text" id="stu-other-phone-desc" maxlength="50" class="sf-input" placeholder="Casa, trabajo, mamá..."></label>
+                            <label class="sf-field"><span class="sf-label">Primary Email <b>*</b></span>
+                                <input type="email" id="stu-email" required maxlength="255" class="sf-input"></label>
+                            <label class="sf-field"><span class="sf-label">Secondary Email</span>
+                                <input type="email" id="stu-secondary-email" maxlength="255" class="sf-input"></label>
+                            <label class="sf-field"><span class="sf-label">Parent Name</span>
+                                <input type="text" id="stu-parent-name" maxlength="150" class="sf-input sf-upper"></label>
+                            <label class="sf-field"><span class="sf-label">Parent Phone</span>
+                                <input type="text" id="stu-parent-phone" maxlength="30" class="sf-input"></label>
+                            <label class="sf-field"><span class="sf-label">High School Name</span>
+                                <input type="text" id="stu-high-school" maxlength="150" class="sf-input sf-upper"></label>
+                        </div>
+
+                        <div class="sf-card">
+                            <label class="sf-field"><span class="sf-label">Birth Date <span id="sf-age"></span> <b>*</b></span>
+                                <input type="date" id="stu-birth-date" required class="sf-input" onchange="renderStudentAge()"></label>
+                            <label class="sf-field"><span class="sf-label">Gender <b>*</b></span>
+                                <select id="stu-gender" required class="sf-input">
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                    <option value="O">Other</option>
+                                </select></label>
+                            <label class="sf-field"><span class="sf-label">Restriction</span>
+                                <input type="text" id="stu-restrictions" maxlength="100" class="sf-input sf-upper" placeholder="Ej. eye glasses"></label>
+                            <label class="sf-field"><span class="sf-label">Endorsements</span>
+                                <input type="text" id="stu-endorsements" maxlength="100" class="sf-input sf-upper"></label>
+                            <label class="sf-field"><span class="sf-label">Eye Color</span>
+                                <select id="stu-eye-color" class="sf-input">
+                                    <option value="">—</option>
+                                    <option value="BLK">Black (BLK)</option>
+                                    <option value="BLU">Blue (BLU)</option>
+                                    <option value="BRN">Brown (BRN)</option>
+                                    <option value="GRN">Green (GRN)</option>
+                                    <option value="HAZ">Hazel (HAZ)</option>
+                                    <option value="GRY">Gray (GRY)</option>
+                                </select></label>
+                            <label class="sf-field"><span class="sf-label">Height</span>
+                                <input type="text" id="stu-height" maxlength="10" class="sf-input" placeholder="5'08&quot;"></label>
+                            <label class="sf-field sf-check">
+                                <input type="checkbox" id="stu-organ-donor" value="1" class="accent-amber-500">
+                                <span class="text-xs font-semibold text-slate-300">Organ Donor</span></label>
+                            <label class="sf-field"><span class="sf-label">Contract #</span>
+                                <input type="text" id="stu-contract-number" maxlength="30" class="sf-input"></label>
+                            <div class="sf-field sf-pb">
+                                <span class="sf-label">Transmission <b>*</b></span>
+                                <div class="flex gap-4 pt-1 text-xs font-semibold text-slate-300">
+                                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="stu-transmission" value="Automático" checked class="accent-amber-500"> Automático</label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="stu-transmission" value="Mecánico" class="accent-amber-500"> Mecánico</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: road test, pickup, package, instructor -->
+                    <div class="space-y-4">
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-road text-violet-400"></i> Road Test</span>
+                                <button type="button" class="sf-icon-btn sf-needs-student" onclick="studentFormAction('road_test')" title="Agendar Road Test"><i class="fa-solid fa-plus"></i></button></h4>
+                            <div id="sf-road-test" class="px-4 py-3 text-xs text-slate-500"></div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-location-dot text-amber-500"></i> Preferred Pickup Location</span></h4>
+                            <label class="sf-field"><span class="sf-label">Dirección donde se recoge al estudiante</span>
+                                <input type="text" id="stu-pickup-location" maxlength="255" class="sf-input" oninput="renderPickupLinks()" placeholder="Igual a la dirección si se deja vacío"></label>
+                            <div id="sf-pickup-links" class="flex gap-4 px-4 py-2 text-xs"></div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-box-open text-amber-500"></i> Package</span></h4>
+                            <label class="sf-field"><span class="sf-label">Paquete <b>*</b></span>
+                                <select id="stu-plan" onchange="updatePlanCost()" required class="sf-input">
+                                    <!-- Options generated by renderPlanOptions() from the package catalog -->
+                                </select></label>
+                            <div class="grid grid-cols-3 gap-2 px-4">
+                                <label class="sf-field sf-tight"><span class="sf-label">Total ($)</span>
+                                    <input type="number" id="stu-cost" readonly class="sf-input text-slate-400 cursor-not-allowed" value="0"></label>
+                                <label class="sf-field sf-tight"><span class="sf-label"><span id="sf-paid-label">Pago inicial</span> <b>*</b></span>
+                                    <input type="number" id="stu-paid" oninput="calculateInscripcionDebt()" required min="0" step="0.01" class="sf-input" placeholder="0"></label>
+                                <label class="sf-field sf-tight"><span class="sf-label">Balance</span>
+                                    <input type="number" id="stu-debt" readonly class="sf-input text-red-500 cursor-not-allowed" value="0"></label>
+                            </div>
+                            <div id="stu-lessons-summary" class="hidden px-4 py-3"></div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-chalkboard-user text-amber-500"></i> Preferred Instructor</span></h4>
+                            <label class="sf-field sf-pb"><span class="sf-label">Se propone al agendar clases</span>
+                                <select id="stu-preferred-instructor" class="sf-input"></select></label>
+                        </div>
+                    </div>
+
+                    <!-- Column 4: permit photos, student photo, last note, appointments -->
+                    <div class="space-y-4">
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-id-card text-amber-500"></i> Learner's Permit</span></h4>
+                            <div class="p-3 space-y-3">
+                                <div class="sf-upload group" id="lic-front-zone" onclick="document.getElementById('lic-front-input').click()">
+                                    <input type="file" id="lic-front-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')">
+                                    <input type="hidden" id="lic-front-base64" value="">
+                                    <div class="upload-placeholder flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                        <span class="text-xs text-slate-400 font-medium">Subir permiso (frente)</span>
+                                        <span class="text-[10px] text-slate-600">JPG, PNG o WEBP (máx. 4MB)</span>
+                                    </div>
+                                    <img id="lic-front-preview" src="" class="hidden w-full max-h-56 rounded-lg object-contain" alt="Permiso (frente)">
+                                    <button type="button" onclick="clearUpload(event, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64')"
+                                        class="sf-upload-remove hidden" id="lic-front-remove" title="Quitar"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                                <div class="sf-upload group" id="lic-back-zone" onclick="document.getElementById('lic-back-input').click()">
+                                    <input type="file" id="lic-back-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')">
+                                    <input type="hidden" id="lic-back-base64" value="">
+                                    <div class="upload-placeholder flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-id-card text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                        <span class="text-xs text-slate-400 font-medium">Subir permiso (reverso)</span>
+                                    </div>
+                                    <img id="lic-back-preview" src="" class="hidden w-full max-h-56 rounded-lg object-contain" alt="Permiso (reverso)">
+                                    <button type="button" onclick="clearUpload(event, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64')"
+                                        class="sf-upload-remove hidden" id="lic-back-remove" title="Quitar"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-user text-amber-500"></i> Foto del estudiante</span></h4>
+                            <div class="p-3">
+                                <div class="sf-upload group" id="stu-photo-zone" onclick="document.getElementById('stu-photo-input').click()">
+                                    <input type="file" id="stu-photo-input" class="hidden" accept="image/*" onchange="handleFileSelect(this, 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')">
+                                    <input type="hidden" id="stu-photo-base64" value="">
+                                    <div class="upload-placeholder flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-camera text-2xl text-slate-500 group-hover:text-amber-500 transition"></i>
+                                        <span class="text-xs text-slate-400 font-medium">Subir foto</span>
+                                    </div>
+                                    <img id="stu-photo-preview" src="" class="hidden max-h-40 rounded-lg object-contain" alt="Foto del estudiante">
+                                    <button type="button" onclick="clearUpload(event, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64')"
+                                        class="sf-upload-remove hidden" id="stu-photo-remove" title="Quitar"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-note-sticky text-amber-500"></i> Last Note</span>
+                                <button type="button" class="sf-icon-btn sf-needs-student" onclick="switchStudentFormTab('notes')" title="Ver / agregar notas"><i class="fa-solid fa-plus"></i></button></h4>
+                            <div id="sf-last-note" class="px-4 py-3 text-xs text-slate-500"></div>
+                        </div>
+
+                        <div class="sf-card">
+                            <h4 class="sf-card-title"><span><i class="fa-solid fa-calendar-check text-amber-500"></i> Appointments <span id="sf-appointments-badge"></span></span>
+                                <button type="button" class="sf-icon-btn sf-needs-student" onclick="switchStudentFormTab('lessons')" title="Ver todas"><i class="fa-solid fa-list"></i></button></h4>
+                            <div id="sf-appointments" class="px-4 py-3 text-xs text-slate-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== LESSONS / RECEIPTS / NOTES ===== -->
+                <div id="sf-tab-lessons" class="hidden p-4"></div>
+                <div id="sf-tab-payments" class="hidden p-4"></div>
+                <div id="sf-tab-notes" class="hidden p-4">
+                    <div class="max-w-3xl">
+                        <textarea id="sf-note-body" rows="3" maxlength="2000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
+                            placeholder="Escribe una nota interna (ej. llamé para reagendar el Road Test, no contestó)..."></textarea>
+                        <div class="flex justify-end mt-2">
+                            <button type="button" onclick="addStudentNote()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition">
+                                <i class="fa-solid fa-plus"></i> Agregar nota
+                            </button>
+                        </div>
+                        <div id="sf-notes-list" class="mt-4 space-y-2"></div>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
+
+    <style>
+        .sf-card { background: rgb(var(--slate-900)); border: 1px solid rgb(var(--slate-800)); border-radius: .85rem; overflow: hidden; }
+        #sf-tab-profile > .sf-card, #sf-tab-profile .sf-card { box-shadow: 0 1px 2px rgb(0 0 0 / .06); }
+        .sf-card-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem 1rem;
+            border-bottom: 1px solid rgb(var(--slate-800)); font-size: .85rem; font-weight: 700; color: rgb(var(--slate-100)); }
+        .sf-card-title > span { display: flex; align-items: center; gap: .5rem; }
+        .sf-field { display: block; padding: .45rem 1rem 0; }
+        .sf-label { display: block; font-size: .68rem; font-weight: 600; color: rgb(var(--slate-500)); }
+        .sf-label b { color: rgb(var(--accent-500)); }
+        .sf-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgb(var(--slate-700)); padding: .2rem 0 .35rem;
+            font-size: .82rem; font-weight: 600; color: rgb(var(--slate-100)); outline: none; transition: border-color .15s; }
+        .sf-input:focus { border-bottom-color: rgb(var(--accent-500)); }
+        .sf-input::placeholder { color: rgb(var(--slate-600)); font-weight: 400; text-transform: none; }
+        .sf-input option { background: rgb(var(--slate-900)); color: rgb(var(--slate-100)); }
+        .sf-field.sf-tight { padding-left: 0; padding-right: 0; }
+        .sf-field.sf-pb { padding-bottom: .75rem; }
+        .sf-field.sf-check { display: flex; align-items: center; gap: .5rem; padding-top: .75rem; padding-bottom: .5rem; cursor: pointer; }
+        .sf-upper { text-transform: uppercase; }
+        .sf-warn.hidden { display: none; }
+        .sf-warn { display: inline-block; margin-top: .2rem; font-size: .62rem; font-weight: 800; text-transform: uppercase; color: #f87171; }
+        .sf-action { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .75rem; border-radius: .6rem; font-size: .75rem; font-weight: 700;
+            color: rgb(var(--slate-300)); transition: all .15s; }
+        .sf-action:hover:not(:disabled) { background: rgb(var(--slate-800)); color: rgb(var(--accent-500)); }
+        .sf-action:disabled, .sf-tab:disabled, .sf-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+        .sf-icon-btn { width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1.5px solid rgb(var(--accent-500)); color: rgb(var(--accent-500));
+            font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; }
+        .sf-icon-btn:hover:not(:disabled) { background: rgb(var(--accent-500)); color: rgb(var(--slate-950)); }
+        .sf-tab { padding: .7rem 1rem; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
+            color: rgb(var(--slate-500)); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .sf-tab:hover:not(:disabled) { color: rgb(var(--slate-200)); }
+        .sf-tab.active { color: rgb(var(--slate-950)); background: rgb(var(--accent-500)); border-radius: .4rem .4rem 0 0; }
+        .sf-upload { position: relative; border: 2px dashed rgb(var(--slate-800)); background: rgb(var(--slate-950)); border-radius: .75rem; padding: .75rem;
+            min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
+        .sf-upload:hover { border-color: rgb(var(--accent-500) / .6); }
+        .sf-upload-remove { position: absolute; top: .4rem; right: .4rem; background: rgb(239 68 68 / .15); color: #f87171; padding: .35rem .5rem;
+            border-radius: .5rem; font-size: .7rem; }
+        .sf-upload-remove:hover { background: #ef4444; color: #fff; }
+        .sf-flag { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .8rem; border-radius: 999px; font-size: .72rem; font-weight: 700;
+            border: 1.5px solid rgb(var(--slate-700)); color: rgb(var(--slate-500)); cursor: pointer; user-select: none; }
+        .sf-flag.on { border-color: #ef4444; color: #fff; background: #ef4444; }
+    </style>
 
     <!-- ================= PANELS: REGISTRO DE ABONOS ================= -->
     <div id="view-abonos" class="hidden max-w-4xl mx-auto space-y-8">
@@ -1317,55 +1340,6 @@
         </div>
     </div>
 
-    <!-- ================= MODAL: STUDENT PROFILE ================= -->
-    <div id="student-profile-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm overflow-y-auto p-3 sm:p-6"
-        onclick="if (event.target === this) closeStudentProfile()">
-        <div class="max-w-6xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
-            <!-- Header -->
-            <div class="flex flex-wrap items-center gap-3 px-5 sm:px-6 py-4 border-b border-slate-800 bg-slate-950/60">
-                <div class="flex-1 min-w-[200px]">
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500" id="sp-subtitle"></p>
-                    <h2 class="text-xl sm:text-2xl font-black text-slate-100 uppercase" id="sp-name"></h2>
-                </div>
-                <span id="sp-balance" class="px-3 py-1 rounded-full text-sm font-black"></span>
-                <button type="button" onclick="closeStudentProfile()" class="text-slate-500 hover:text-slate-100 text-xl px-2" title="Cerrar">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex flex-wrap gap-2 px-5 sm:px-6 py-3 border-b border-slate-800">
-                <button type="button" onclick="studentProfileAction('edit')" class="sp-action"><i class="fa-solid fa-pen"></i> Editar</button>
-                <button type="button" onclick="studentProfileAction('agenda')" class="sp-action"><i class="fa-solid fa-calendar-plus"></i> Agendar clase</button>
-                <button type="button" onclick="studentProfileAction('road_test')" class="sp-action"><i class="fa-solid fa-road"></i> Road Test</button>
-                <button type="button" onclick="studentProfileAction('pay')" class="sp-action" id="sp-pay-btn"><i class="fa-solid fa-dollar-sign"></i> Registrar pago</button>
-                <button type="button" onclick="studentProfileAction('invoice')" class="sp-action"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
-            </div>
-
-            <!-- Tabs -->
-            <div class="flex gap-1 px-5 sm:px-6 pt-3 border-b border-slate-800 overflow-x-auto">
-                <button type="button" data-sp-tab="profile" onclick="switchStudentProfileTab('profile')" class="sp-tab">Perfil</button>
-                <button type="button" data-sp-tab="lessons" onclick="switchStudentProfileTab('lessons')" class="sp-tab">Clases <span id="sp-lessons-count"></span></button>
-                <button type="button" data-sp-tab="payments" onclick="switchStudentProfileTab('payments')" class="sp-tab">Pagos <span id="sp-payments-count"></span></button>
-            </div>
-
-            <div class="p-5 sm:p-6">
-                <div id="sp-tab-profile"></div>
-                <div id="sp-tab-lessons" class="hidden"></div>
-                <div id="sp-tab-payments" class="hidden"></div>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .sp-action { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .8rem; border-radius: .6rem; font-size: .75rem; font-weight: 700;
-            border: 1px solid rgb(var(--slate-800)); background: rgb(var(--slate-950)); color: rgb(var(--slate-300)); transition: all .15s; }
-        .sp-action:hover { border-color: rgb(var(--accent-500)); color: rgb(var(--accent-500)); }
-        .sp-tab { padding: .55rem 1rem; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
-            color: rgb(var(--slate-500)); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-        .sp-tab:hover { color: rgb(var(--slate-200)); }
-        .sp-tab.active { color: rgb(var(--accent-500)); border-bottom-color: rgb(var(--accent-500)); }
-    </style>
 @endsection
 
 @push('scripts')
@@ -1478,13 +1452,11 @@
                 sectionPre.innerText = "Gestión de operaciones";
                 sectionTitle.innerText = "Dashboard Principal";
             } else if (tabId === 'inscripcion') {
-                sectionPre.innerText = "Inscripciones";
-                sectionTitle.innerText = "Registrar Estudiante";
+                sectionPre.innerText = "Estudiantes";
+                sectionTitle.innerText = isEditing ? "Ficha del Estudiante" : "Registrar Estudiante";
                 if (!isEditing) {
                     editingStudentId = null;
                     document.getElementById('student-form').reset();
-                    document.getElementById('student-form-title').innerText = "Ficha de Inscripción Digital";
-                    document.getElementById('student-form-subtitle').innerText = "Crea nuevos expedientes que se sincronizarán directamente con la base de datos.";
                     document.getElementById('student-submit-btn-text').innerText = "Registrar Alumno";
                     document.getElementById('student-submit-btn-icon').className = "fa-solid fa-save";
                     
@@ -1780,6 +1752,21 @@
                 license_photo,
                 license_photo_back,
                 contract_number,
+                suffix: document.getElementById('stu-suffix').value.trim(),
+                apt: document.getElementById('stu-apt').value.trim(),
+                other_phone: document.getElementById('stu-other-phone').value.trim(),
+                other_phone_desc: document.getElementById('stu-other-phone-desc').value.trim(),
+                secondary_email: document.getElementById('stu-secondary-email').value.trim(),
+                parent_name: document.getElementById('stu-parent-name').value.trim(),
+                parent_phone: document.getElementById('stu-parent-phone').value.trim(),
+                high_school: document.getElementById('stu-high-school').value.trim(),
+                restrictions: document.getElementById('stu-restrictions').value.trim(),
+                endorsements: document.getElementById('stu-endorsements').value.trim(),
+                certificate_number: document.getElementById('stu-certificate-number').value.trim(),
+                certificate_expiry: document.getElementById('stu-certificate-expiry').value || null,
+                pickup_location: document.getElementById('stu-pickup-location').value.trim(),
+                preferred_instructor_id: Number(document.getElementById('stu-preferred-instructor').value) || null,
+                is_problematic: document.getElementById('stu-problematic').checked ? 1 : 0,
                 package: plan,
                 transmission: trans,
                 plan_cost: cost,
@@ -1837,21 +1824,11 @@
                         `;
                     }
 
-                    // Reset Form and update calculations
-                    document.getElementById('student-form').reset();
-                    clearUpload(null, 'stu-photo-input', 'stu-photo-preview', 'stu-photo-zone', 'stu-photo-base64');
-                    clearUpload(null, 'lic-front-input', 'lic-front-preview', 'lic-front-zone', 'lic-front-base64');
-                    clearUpload(null, 'lic-back-input', 'lic-back-preview', 'lic-back-zone', 'lic-back-base64');
-                    updatePlanCost();
                     updateDashboardMetrics();
                     renderSheetTable();
 
-                    // Switch to sheets-db automatically to show dynamic insertion
-                    setTimeout(() => {
-                        switchTab('sheets-db');
-                        switchSheetTab('students');
-                        showToast(method === 'PUT' ? "Los datos se actualizaron en la base de datos MySQL" : "Los datos se guardaron en la base de datos MySQL y se sincronizaron con Google Sheets", "info");
-                    }, 1000);
+                    // Stay on the student's page (now saved) to keep working with it
+                    editStudent(student.id);
                 } else {
                     showToast("Error de validación: " + (res.message || "Campos incompletos."), "warning");
                 }
@@ -2864,7 +2841,6 @@
             if (!student) return;
 
             editingStudentId = student.db_id;
-            renderStudentLessonSummary(student);
 
             // Pre-fill form fields
             document.getElementById('stu-contract-number').value = student.contract_number || '';
@@ -2884,6 +2860,18 @@
             document.getElementById('stu-height').value = student.height || '';
             document.getElementById('stu-eye-color').value = student.eye_color || '';
             document.getElementById('stu-organ-donor').checked = !!student.is_organ_donor;
+
+            // Extra profile data
+            const fields = {
+                'stu-suffix': 'suffix', 'stu-apt': 'apt', 'stu-other-phone': 'other_phone', 'stu-other-phone-desc': 'other_phone_desc',
+                'stu-secondary-email': 'secondary_email', 'stu-parent-name': 'parent_name', 'stu-parent-phone': 'parent_phone',
+                'stu-high-school': 'high_school', 'stu-restrictions': 'restrictions', 'stu-endorsements': 'endorsements',
+                'stu-certificate-number': 'certificate_number', 'stu-certificate-expiry': 'certificate_expiry',
+                'stu-pickup-location': 'pickup_location',
+            };
+            Object.entries(fields).forEach(([id, key]) => { document.getElementById(id).value = student[key] || ''; });
+            document.getElementById('stu-problematic').checked = !!student.is_problematic;
+            renderPreferredInstructorOptions(student.preferred_instructor_id);
 
             // Optional License permit info
             if (student.license) {
@@ -2943,13 +2931,15 @@
             }
 
             // Toggle title and submit button texts to Edit Mode
-            document.getElementById('student-form-title').innerText = "Editar Expediente de Estudiante";
-            document.getElementById('student-form-subtitle').innerText = `Modificando datos del alumno ${student.name} [ID: ${student.id}] en la base de datos.`;
-            document.getElementById('student-submit-btn-text').innerText = "Guardar Cambios";
-            document.getElementById('student-submit-btn-icon').className = "fa-solid fa-pen-to-square";
+            document.getElementById('student-form-title').innerText = `${student.id}${student.contract_number ? ' · Contrato ' + student.contract_number : ''}`;
+            document.getElementById('student-form-subtitle').innerText = `Inscrito el ${student.date}${student.plan ? ' · ' + student.plan : ''}`;
+            document.getElementById('student-submit-btn-text').innerText = "Guardar";
+            document.getElementById('student-submit-btn-icon').className = "fa-solid fa-save";
+            renderStudentFormExtras(student);
 
             // Switch to form tab
             switchTab('inscripcion', true);
+            switchStudentFormTab('profile');
         }
 
         function editInstructor(instructorId) {
@@ -3225,7 +3215,7 @@
                     </button>
                 </div>
                 ${st.total ? `
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="grid grid-cols-2 gap-2">
                     ${tile('Compradas', count(st.total), 'text-slate-100', `de ${LESSON_MINUTES} min`)}
                     ${tile('Tomadas', count(st.taken), 'text-green-500', st.noShow ? `+ ${count(st.noShow)} no asistió` : '')}
                     ${tile('Agendadas', count(st.scheduled), 'text-amber-500', 'por tomar')}
@@ -3235,62 +3225,57 @@
             box.classList.remove('hidden');
         }
 
-        function openAgendaForStudent(studentDbId) {
+        function openAgendaForStudent(studentDbId, type = 'lesson') {
             switchTab('agenda');
-            setLessonType('lesson');
+            setLessonType(type);
             document.getElementById('lesson-student').value = studentDbId;
+
+            // Propose the student's preferred instructor
+            const student = students.find(s => s.db_id === Number(studentDbId));
+            const insSelect = document.getElementById('lesson-instructor');
+            if (student?.preferred_instructor_id && [...insSelect.options].some(o => Number(o.value) === student.preferred_instructor_id)) {
+                insSelect.value = student.preferred_instructor_id;
+            }
             handleAgendaStudentChange();
+            if (insSelect.value) renderAgendaBusySlots();
         }
 
-        // ---------- Student profile (all the student's data in one place) ----------
-        let profileStudentId = null;
+        // ---------- Student page: register / edit / view (same screen) ----------
+        function getEditingStudent() {
+            return editingStudentId ? students.find(s => s.db_id === editingStudentId) : null;
+        }
 
-        const GENDER_LABELS = { M: 'Masculino', F: 'Femenino', O: 'Otro' };
-
+        // Eye button / student name: open the student's page on a tab
         function openStudentProfile(studentDbId, tab = 'profile') {
             const student = students.find(s => s.db_id === Number(studentDbId));
             if (!student) return showToast('No se encontró el estudiante.', 'warning');
-
-            profileStudentId = student.db_id;
-            renderStudentProfile(student);
-            switchStudentProfileTab(tab);
-            document.getElementById('student-profile-modal').classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
+            editStudent(student.id);
+            switchStudentFormTab(tab);
         }
 
-        function closeStudentProfile() {
-            profileStudentId = null;
-            document.getElementById('student-profile-modal').classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && profileStudentId !== null) closeStudentProfile();
-        });
-
-        function switchStudentProfileTab(tab) {
-            ['profile', 'lessons', 'payments'].forEach(t => {
-                document.getElementById(`sp-tab-${t}`).classList.toggle('hidden', t !== tab);
+        function switchStudentFormTab(tab) {
+            if (tab !== 'profile' && !getEditingStudent()) tab = 'profile';
+            ['profile', 'lessons', 'payments', 'notes'].forEach(t => {
+                document.getElementById(`sf-tab-${t}`).classList.toggle('hidden', t !== tab);
             });
-            document.querySelectorAll('[data-sp-tab]').forEach(b => b.classList.toggle('active', b.dataset.spTab === tab));
+            document.querySelectorAll('[data-sf-tab]').forEach(b => b.classList.toggle('active', b.dataset.sfTab === tab));
         }
 
-        function studentProfileAction(action) {
-            const student = students.find(s => s.db_id === profileStudentId);
+        function studentFormAction(action) {
+            const student = getEditingStudent();
             if (!student) return;
-            closeStudentProfile();
 
-            if (action === 'edit') editStudent(student.id);
-            else if (action === 'agenda') openAgendaForStudent(student.db_id);
-            else if (action === 'road_test') {
-                switchTab('agenda');
-                setLessonType('road_test');
-                document.getElementById('lesson-student').value = student.db_id;
-                handleAgendaStudentChange();
-            } else if (action === 'pay') {
+            if (action === 'agenda') openAgendaForStudent(student.db_id);
+            else if (action === 'road_test') openAgendaForStudent(student.db_id, 'road_test');
+            else if (action === 'pay') {
                 if (student.debt > 0) simulateCobro(student.id);
                 else showToast('El estudiante no tiene saldo pendiente.', 'info');
             } else if (action === 'invoice') openInvoice(student.db_id);
+            else if (action === 'email') {
+                if (student.email) window.location.href = 'mailto:' + student.email;
+            } else if (action === 'text') {
+                if (student.phone) window.location.href = 'sms:' + String(student.phone).replace(/[^\d+]/g, '');
+            }
         }
 
         function ageFrom(dateStr) {
@@ -3307,150 +3292,126 @@
             return '$' + Number(v || 0).toFixed(2);
         }
 
-        // A labelled value, underlined like a form field (read-only)
-        function spField(label, value, extra = '') {
-            const shown = value === null || value === undefined || value === '' ? '<span class="text-slate-600">—</span>' : esc(String(value));
-            return `
-                <div class="py-2 border-b border-slate-800">
-                    <p class="text-[10px] font-semibold text-slate-500">${label}</p>
-                    <div class="flex items-center justify-between gap-2">
-                        <p class="text-sm font-semibold text-slate-200 uppercase break-words">${shown}</p>${extra}
-                    </div>
-                </div>`;
-        }
-
-        function spCard(title, body, icon = '') {
-            return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-                    <h4 class="px-4 py-3 border-b border-slate-800 text-sm font-bold text-slate-100 flex items-center gap-2">
-                        ${icon ? `<i class="fa-solid ${icon} text-amber-500"></i>` : ''}${title}
-                    </h4>
-                    <div class="px-4 pb-3">${body}</div>
-                </div>`;
-        }
-
         function copyToClipboard(text) {
+            if (!text) return;
             navigator.clipboard?.writeText(text).then(() => showToast('Copiado: ' + text, 'success'));
         }
 
-        function renderStudentProfile(student) {
-            const ownLessons = lessons.filter(l => l.student_id === student.db_id)
-                .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
-            const ownPayments = payments.filter(p => p.student_id === student.db_id);
-            const lic = student.license;
-            const age = ageFrom(student.birth_date);
-            const today = new Date().toISOString().slice(0, 10);
-            const licExpired = lic && lic.expiration_date && String(lic.expiration_date).slice(0, 10) < today;
+        function renderStudentFormName() {
+            const name = ['stu-last-name', 'stu-first-name', 'stu-middle-name']
+                .map(id => document.getElementById(id).value.trim()).filter(Boolean).join(' ');
+            document.getElementById('sf-name').textContent = name || 'Nuevo estudiante';
+        }
 
-            // Header
-            document.getElementById('sp-subtitle').textContent =
-                `${student.id}${student.contract_number ? ' · Contrato ' + student.contract_number : ''} · Inscrito ${student.date}`;
-            document.getElementById('sp-name').textContent =
-                [student.last_name, student.first_name, student.middle_name].filter(Boolean).join(' ').trim() || student.name;
-            const bal = document.getElementById('sp-balance');
-            bal.textContent = student.debt > 0 ? `Balance ${money(student.debt)}` : 'Al día';
-            bal.className = 'px-3 py-1 rounded-full text-sm font-black ' + (student.debt > 0 ? 'bg-red-600 text-white' : 'bg-green-600 text-white');
-            document.getElementById('sp-pay-btn').classList.toggle('opacity-50', !(student.debt > 0));
-            document.getElementById('sp-lessons-count').textContent = ownLessons.length ? `(${ownLessons.length})` : '';
-            document.getElementById('sp-payments-count').textContent = ownPayments.length ? `(${ownPayments.length})` : '';
+        function renderStudentAge() {
+            const age = ageFrom(document.getElementById('stu-birth-date').value);
+            document.getElementById('sf-age').textContent = age !== null && age >= 0 ? `(${age} years old)` : '';
+        }
 
-            // ----- Profile tab -----
-            const copyBtn = text => text
-                ? `<button type="button" data-copy="${esc(text)}" onclick="copyToClipboard(this.dataset.copy)" class="text-slate-500 hover:text-amber-500" title="Copiar"><i class="fa-regular fa-copy"></i></button>`
-                : '';
+        function renderExpiryWarnings() {
+            const today = todayLocal();
+            [['lic-expiration', 'sf-permit-expired'], ['stu-certificate-expiry', 'sf-certificate-expired']].forEach(([input, warn]) => {
+                const v = document.getElementById(input).value;
+                document.getElementById(warn).classList.toggle('hidden', !(v && v < today));
+            });
+        }
 
-            const permitCol = spCard('Permiso / Licencia', `
-                ${spField('Permit Number', lic?.license_number, copyBtn(lic?.license_number))}
-                ${spField('Clase', lic?.license_class)}
-                ${spField('Permit Expiry', lic?.expiration_date ? String(lic.expiration_date).slice(0, 10) : '',
-                    licExpired ? '<span class="text-[10px] font-bold bg-red-500/10 text-red-400 px-2 py-0.5 rounded">VENCIDO</span>' : '')}
-                ${spField('Last Name', student.last_name)}
-                ${spField('First Name', student.first_name)}
-                ${spField('Middle Name', student.middle_name)}
-                ${spField('Street Address', student.address)}
-                ${spField('City', student.city)}
-                ${spField('State', student.state)}
-                ${spField('Zip Code', student.zip_code)}`, 'fa-id-card');
+        function renderPickupLinks() {
+            const pickup = document.getElementById('stu-pickup-location').value.trim();
+            const address = [document.getElementById('stu-address').value, document.getElementById('stu-city').value,
+                document.getElementById('stu-state').value, document.getElementById('stu-zip-code').value].map(v => v.trim()).filter(Boolean).join(', ');
+            document.getElementById('sf-pickup-links').innerHTML = mapLinks(pickup || address);
+        }
 
-            const phoneLink = student.phone
-                ? `<span class="flex gap-2 text-xs"><a href="tel:${esc(student.phone)}" class="text-sky-400" title="Llamar"><i class="fa-solid fa-phone"></i></a><a href="sms:${esc(student.phone)}" class="text-sky-400" title="SMS"><i class="fa-solid fa-comment-sms"></i></a></span>`
-                : '';
-            const mailLink = student.email ? `<a href="mailto:${esc(student.email)}" class="text-sky-400 text-xs" title="Enviar correo"><i class="fa-solid fa-envelope"></i></a>` : '';
+        function renderProblematicFlag() {
+            const box = document.getElementById('stu-problematic');
+            box.closest('.sf-flag').classList.toggle('on', box.checked);
+        }
 
-            const contactCol = spCard('Contacto y Datos Personales', `
-                ${spField('Mobile', student.phone, phoneLink)}
-                ${spField('Primary Email', student.email, mailLink)}
-                ${spField(`Birth Date${age !== null ? ` (${age} años)` : ''}`, student.birth_date ? String(student.birth_date).slice(0, 10) : '')}
-                ${spField('Gender', GENDER_LABELS[student.gender] || student.gender)}
-                ${spField('Height', student.height)}
-                ${spField('Eye Color', student.eye_color)}
-                ${spField('Organ Donor', student.is_organ_donor ? 'Sí' : 'No')}
-                ${spField('Transmisión', student.transmission)}`, 'fa-address-book');
+        function renderPreferredInstructorOptions(selected = null) {
+            const select = document.getElementById('stu-preferred-instructor');
+            select.innerHTML = '<option value="">None</option>' + [...instructors]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(i => `<option value="${i.db_id}">${esc(i.name)}${i.status === 'Suspendido' ? ' (suspendido)' : ''}</option>`).join('');
+            select.value = selected ? String(selected) : '';
+        }
 
-            // Road test, package, next class
-            const st = studentLessonStats(student);
-            const count = min => Math.round(min / LESSON_MINUTES * 10) / 10;
-            const nextRoadTest = ownLessons.filter(l => isRoadTest(l) && l.status === 'scheduled')
-                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
-            const lastRoadTest = ownLessons.find(l => isRoadTest(l) && l.status !== 'cancelled');
-            const roadTest = nextRoadTest || lastRoadTest;
-            const nextLesson = ownLessons.filter(l => !isRoadTest(l) && l.status === 'scheduled' && l.date >= today)
-                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
+        // Everything on the student page that is not a form input: header, cards and the other tabs
+        function renderStudentFormExtras(student) {
+            const has = !!student;
+            document.querySelectorAll('#view-inscripcion .sf-needs-student').forEach(b => { b.disabled = !has; });
 
-            const roadTestCard = spCard('Road Test', roadTest ? `
-                ${spField('Appointment Time', `${roadTest.date} ${roadTest.time}`,
-                    `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${(LESSON_STATUS[roadTest.status] || {}).cls || ''}">${esc(lessonStatusLabel(roadTest.status))}</span>`)}
-                ${spField('Test Location', roadTest.location)}
-                ${roadTest.location ? `<div class="flex gap-4 text-xs pt-2">${mapLinks(roadTest.location)}</div>` : ''}
-                ${spField('Instructor', roadTest.instructor_name)}` : `
-                <p class="text-xs text-slate-500 pt-3">Sin Road Test agendado.</p>
-                <button type="button" onclick="studentProfileAction('road_test')" class="mt-2 text-xs font-bold text-violet-400 hover:underline"><i class="fa-solid fa-plus"></i> Agendar Road Test</button>`, 'fa-road');
+            const badge = document.getElementById('sf-balance-badge');
+            if (has) {
+                badge.textContent = student.debt > 0 ? money(student.debt) : 'Al día';
+                badge.className = 'px-3 py-1 rounded-full text-sm font-black ' + (student.debt > 0 ? 'bg-red-600 text-white' : 'bg-green-600 text-white');
+            } else {
+                badge.className = 'hidden';
+            }
 
-            const packageCard = spCard('Package', `
-                ${spField('Paquete', student.plan || 'Sin paquete asignado')}
-                ${spField('Lesson Count', student.package_lessons ? `${student.package_lessons} (${LESSON_MINUTES} min c/u)` : '0')}
-                <div class="grid grid-cols-4 gap-2 pt-3 text-center">
-                    <div><p class="text-lg font-black text-green-500">${count(st.taken)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Tomadas</p></div>
-                    <div><p class="text-lg font-black text-amber-500">${count(st.scheduled)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Agendadas</p></div>
-                    <div><p class="text-lg font-black text-red-400">${count(st.noShow)}</p><p class="text-[9px] uppercase font-bold text-slate-500">No asistió</p></div>
-                    <div><p class="text-lg font-black ${st.left ? 'text-sky-400' : 'text-slate-500'}">${count(st.left)}</p><p class="text-[9px] uppercase font-bold text-slate-500">Le quedan</p></div>
-                </div>
-                ${spField('Próxima clase', nextLesson ? `${nextLesson.date} ${nextLesson.time} · ${nextLesson.instructor_name}` : '')}`, 'fa-box-open');
+            document.getElementById('sf-paid-label').textContent = has ? 'Pagado' : 'Pago inicial';
 
-            const billingCard = spCard('Billing', `
-                ${spField('Total', money(student.cost))}
-                ${spField('Payments', money(student.paid))}
-                <div class="flex justify-between items-center pt-3">
-                    <span class="text-xs font-bold uppercase text-slate-500">Balance</span>
-                    <span class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</span>
-                </div>`, 'fa-dollar-sign');
+            const phone = document.getElementById('stu-phone').value.trim();
+            document.getElementById('sf-call-link').href = phone ? 'tel:' + phone.replace(/[^\d+]/g, '') : '#';
 
-            const img = (url, alt) => url
-                ? `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="${alt}" class="w-full rounded-lg border border-slate-800 object-contain max-h-56 bg-slate-900"></a>`
-                : `<div class="w-full h-32 rounded-lg border border-dashed border-slate-800 flex items-center justify-center text-xs text-slate-600">Sin ${alt.toLowerCase()}</div>`;
+            renderStudentFormName();
+            renderStudentAge();
+            renderExpiryWarnings();
+            renderPickupLinks();
+            renderProblematicFlag();
+            renderStudentLessonSummary(student);
 
-            const photosCard = spCard("Learner's Permit", `
-                <div class="space-y-3 pt-3">
-                    ${img(lic?.license_photo_url, 'Permiso (frente)')}
-                    ${lic?.license_photo_back_url ? img(lic.license_photo_back_url, 'Permiso (reverso)') : ''}
-                    <div class="grid grid-cols-[80px_1fr] gap-3 items-center">
-                        ${student.student_photo_url
-                            ? `<img src="${esc(student.student_photo_url)}" alt="Foto" class="w-20 h-20 rounded-full object-cover border border-slate-800">`
-                            : `<div class="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 text-2xl"><i class="fa-solid fa-user"></i></div>`}
-                        <p class="text-[11px] text-slate-500">Foto del estudiante</p>
-                    </div>
-                </div>`, 'fa-image');
+            const ownLessons = has ? lessons.filter(l => l.student_id === student.db_id)
+                .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)) : [];
+            const ownPayments = has ? payments.filter(p => p.student_id === student.db_id) : [];
+            const notes = has ? (student.notes || []) : [];
+            const count = n => n ? `(${n})` : '';
+            document.getElementById('sf-lessons-count').textContent = count(ownLessons.length);
+            document.getElementById('sf-payments-count').textContent = count(ownPayments.length);
+            document.getElementById('sf-notes-count').textContent = count(notes.length);
 
-            document.getElementById('sp-tab-profile').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
-                    <div>${permitCol}</div>
-                    <div>${contactCol}</div>
-                    <div class="space-y-4">${roadTestCard}${packageCard}${billingCard}</div>
-                    <div>${photosCard}</div>
-                </div>`;
+            const today = todayLocal();
+            const byStart = (a, b) => (a.date + a.time).localeCompare(b.date + b.time);
+            const statusBadge = l => `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${(LESSON_STATUS[l.status] || {}).cls || ''}">${esc(lessonStatusLabel(l.status))}</span>`;
 
-            // ----- Lessons tab -----
-            document.getElementById('sp-tab-lessons').innerHTML = ownLessons.length ? `
+            // Road test card: next scheduled one, otherwise the last one
+            const roadTest = ownLessons.filter(l => isRoadTest(l) && l.status === 'scheduled').sort(byStart)[0]
+                || ownLessons.find(l => isRoadTest(l) && l.status !== 'cancelled');
+            document.getElementById('sf-road-test').innerHTML = !has
+                ? 'Guarda el estudiante para poder agendar su Road Test.'
+                : roadTest ? `
+                    <p class="sf-label">Appointment Time</p>
+                    <div class="flex items-center justify-between gap-2"><p class="text-sm font-semibold text-slate-100 font-mono">${esc(roadTest.date)} ${esc(roadTest.time)}</p>${statusBadge(roadTest)}</div>
+                    <p class="sf-label mt-2">Test Location</p>
+                    <p class="text-sm font-semibold text-slate-100">${esc(roadTest.location || '—')}</p>
+                    ${roadTest.location ? `<div class="flex gap-4 mt-1">${mapLinks(roadTest.location)}</div>` : ''}
+                    <p class="sf-label mt-2">Instructor</p>
+                    <p class="text-sm font-semibold text-slate-100">${esc(roadTest.instructor_name)}</p>`
+                : 'Sin Road Test agendado.';
+
+            // Appointments card: upcoming lessons
+            const upcoming = ownLessons.filter(l => l.status === 'scheduled' && l.date >= today).sort(byStart);
+            document.getElementById('sf-appointments-badge').innerHTML = upcoming.length
+                ? `<span class="bg-green-600 text-white text-[10px] font-black rounded-full px-2 py-0.5">${upcoming.length}</span>` : '';
+            document.getElementById('sf-appointments').innerHTML = !has ? 'Sin clases todavía.'
+                : upcoming.length ? `<ul class="space-y-1.5">${upcoming.slice(0, 5).map(l => `
+                    <li class="flex items-center justify-between gap-2 ${isRoadTest(l) ? 'text-violet-500 font-semibold' : 'text-slate-300'}">
+                        <span class="font-mono">${esc(l.date)} ${esc(l.time)}</span>
+                        <span class="truncate">${isRoadTest(l) ? 'ROAD TEST' : esc(l.instructor_name)}</span>
+                    </li>`).join('')}</ul>${upcoming.length > 5 ? `<p class="mt-1 text-slate-500">y ${upcoming.length - 5} más...</p>` : ''}`
+                : 'Sin clases próximas.';
+
+            // Last note card
+            const last = notes[0];
+            document.getElementById('sf-last-note').innerHTML = !has ? 'Guarda el estudiante para agregar notas.'
+                : last ? `<p class="text-[11px] text-slate-500">${esc(last.created_at)}${last.author ? ' · ' + esc(last.author) : ''}</p>
+                          <p class="text-sm text-slate-200 uppercase whitespace-pre-line mt-0.5">${esc(last.body)}</p>`
+                : 'Sin notas.';
+
+            renderStudentNotes(notes);
+
+            // Lessons tab
+            document.getElementById('sf-tab-lessons').innerHTML = ownLessons.length ? `
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
@@ -3466,7 +3427,7 @@
                                         : `<span class="text-xs text-slate-400">${esc(lessonsText(l.duration_minutes))}</span>`}</td>
                                     <td class="py-2 pr-3 text-slate-300">${esc(l.instructor_name)}</td>
                                     <td class="py-2 pr-3 text-xs text-slate-500">${esc(l.vehicle || '—')}</td>
-                                    <td class="py-2 pr-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${(LESSON_STATUS[l.status] || {}).cls || ''}">${esc(lessonStatusLabel(l.status))}</span></td>
+                                    <td class="py-2 pr-3">${statusBadge(l)}</td>
                                     <td class="py-2 text-xs text-slate-400">
                                         ${l.location ? `<span class="text-violet-300">${esc(l.location)}</span><span class="flex gap-3 mt-0.5">${mapLinks(l.location)}</span>` : ''}
                                         ${l.notes ? `<span class="block">${esc(l.notes)}</span>` : ''}
@@ -3476,13 +3437,20 @@
                     </table>
                 </div>` : `<p class="text-sm text-slate-500 text-center py-8">El estudiante no tiene clases agendadas.</p>`;
 
-            // ----- Payments tab -----
+            // Receipts tab
+            if (!has) {
+                document.getElementById('sf-tab-payments').innerHTML = '';
+                return;
+            }
             const initial = Math.max(0, Math.round((student.paid - ownPayments.reduce((sum, p) => sum + p.amount, 0)) * 100) / 100);
-            document.getElementById('sp-tab-payments').innerHTML = `
-                <div class="grid grid-cols-3 gap-3 mb-5 max-w-xl">
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Total</p><p class="text-lg font-black text-slate-100">${money(student.cost)}</p></div>
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Payments</p><p class="text-lg font-black text-green-500">${money(student.paid)}</p></div>
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3"><p class="text-[10px] uppercase font-bold text-slate-500">Balance</p><p class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</p></div>
+            document.getElementById('sf-tab-payments').innerHTML = `
+                <div class="flex flex-wrap items-end gap-3 mb-5">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 min-w-[120px]"><p class="text-[10px] uppercase font-bold text-slate-500">Total</p><p class="text-lg font-black text-slate-100">${money(student.cost)}</p></div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 min-w-[120px]"><p class="text-[10px] uppercase font-bold text-slate-500">Payments</p><p class="text-lg font-black text-green-500">${money(student.paid)}</p></div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 min-w-[120px]"><p class="text-[10px] uppercase font-bold text-slate-500">Balance</p><p class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</p></div>
+                    <span class="flex-1"></span>
+                    <button type="button" onclick="studentFormAction('invoice')" class="sf-action"><i class="fa-solid fa-file-invoice"></i> Invoice</button>
+                    <button type="button" onclick="studentFormAction('pay')" class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 px-3 py-2 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-dollar-sign"></i> Registrar pago</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
@@ -3506,6 +3474,47 @@
                         </tbody>
                     </table>
                 </div>`;
+        }
+
+        // ---------- Student notes ----------
+        function renderStudentNotes(notes) {
+            document.getElementById('sf-notes-list').innerHTML = notes.length ? notes.map(n => `
+                <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                    <div class="flex justify-between gap-2 text-[11px] text-slate-500">
+                        <span>${esc(n.created_at)}${n.author ? ' · ' + esc(n.author) : ''}</span>
+                        <button type="button" onclick="deleteStudentNote(${n.db_id})" class="hover:text-red-400" title="Eliminar nota"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <p class="text-sm text-slate-200 whitespace-pre-line mt-1">${esc(n.body)}</p>
+                </div>`).join('') : '<p class="text-xs text-slate-500">Sin notas.</p>';
+        }
+
+        function saveStudentNotes(student, res) {
+            student.notes = res.notes;
+            renderStudentFormExtras(student);
+        }
+
+        function addStudentNote() {
+            const student = getEditingStudent();
+            const box = document.getElementById('sf-note-body');
+            const body = box.value.trim();
+            if (!student || !body) return showToast('Escribe la nota primero.', 'warning');
+
+            apiRequest(`{{ url('students') }}/${student.db_id}/notes`, 'POST', { body })
+                .then(res => {
+                    box.value = '';
+                    saveStudentNotes(student, res);
+                    showToast('Nota agregada.', 'success');
+                })
+                .catch(err => showToast(err.message, 'warning'));
+        }
+
+        function deleteStudentNote(noteId) {
+            const student = getEditingStudent();
+            if (!student || !confirm('¿Eliminar esta nota?')) return;
+
+            apiRequest(`{{ url('students') }}/${student.db_id}/notes/${noteId}`, 'DELETE')
+                .then(res => saveStudentNotes(student, res))
+                .catch(err => showToast(err.message, 'warning'));
         }
 
         // Invoice: package bought, all the student's payments and the balance
@@ -4381,14 +4390,17 @@
             // Set up form reset listeners
             document.getElementById('student-form').addEventListener('reset', () => {
                 editingStudentId = null;
-                renderStudentLessonSummary(null);
-                document.getElementById('student-form-title').innerText = "Ficha de Inscripción Digital";
-                document.getElementById('student-form-subtitle').innerText = "Crea nuevos expedientes que se sincronizarán directamente con la base de datos.";
+                document.getElementById('student-form-title').innerText = "Nuevo estudiante";
+                document.getElementById('student-form-subtitle').innerText = "Completa la ficha y presiona Guardar.";
                 document.getElementById('student-submit-btn-text').innerText = "Registrar Alumno";
                 document.getElementById('student-submit-btn-icon').className = "fa-solid fa-save";
+                document.getElementById('sf-note-body').value = '';
                 setTimeout(() => {
                     renderPlanOptions();
                     updatePlanCost();
+                    renderPreferredInstructorOptions(null);
+                    renderStudentFormExtras(null);
+                    switchStudentFormTab('profile');
                 }, 0);
             });
 
