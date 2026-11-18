@@ -20,32 +20,88 @@ class InstructorPortalController extends Controller
     /** How many days ahead are shown */
     public const UPCOMING_DAYS = 7;
 
-    public function show(string $token)
+    /** Lessons per page in the "Completadas" / "No asistió" tabs */
+    public const PER_PAGE = 20;
+
+    /** Tabs of the page => lesson status they list */
+    public const TABS = [
+        'pendientes' => Lesson::STATUS_SCHEDULED,
+        'completadas' => Lesson::STATUS_COMPLETED,
+        'no-asistio' => Lesson::STATUS_NO_SHOW,
+    ];
+
+    /** Student columns the search box looks in */
+    private const SEARCH_COLUMNS = [
+        'first_name', 'middle_name', 'last_name', 'phone', 'other_phone', 'email', 'secondary_email',
+        'contract_number', 'parent_name', 'address', 'city', 'zip_code', 'pickup_location',
+    ];
+
+    public function show(Request $request, string $token)
     {
         $instructor = $this->instructor($token);
+
+        $tab = array_key_exists($request->query('tab'), self::TABS) ? $request->query('tab') : 'pendientes';
+        $q = trim((string) $request->query('q', ''));
+        $date = $request->query('date');
+        $date = is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) && strtotime($date) ? $date : null;
 
         // Lessons are stored in school local time
         $now = Carbon::now(config('app.school_timezone'))->format('Y-m-d H:i:s');
         $today = substr($now, 0, 10);
 
-        $lessons = $instructor->lessons()
-            ->with(['student', 'vehicle'])
-            ->where('status', '!=', Lesson::STATUS_CANCELLED)
-            ->where('starts_at', '>=', Carbon::parse($today)->subDays(self::PENDING_DAYS))
-            ->where('starts_at', '<', Carbon::parse($today)->addDays(self::UPCOMING_DAYS + 1))
-            ->orderBy('starts_at')
-            ->get();
+        // Search (any student data, every word must match) + date: shared by the three tabs
+        $base = fn () => $instructor->lessons()
+            ->when($q !== '', function ($query) use ($q) {
+                foreach (preg_split('/\s+/', $q) as $word) {
+                    $query->whereHas('student', function ($s) use ($word) {
+                        $s->where(function ($w) use ($word) {
+                            foreach (self::SEARCH_COLUMNS as $column) {
+                                $w->orWhere($column, 'like', '%' . $word . '%');
+                            }
+                        });
+                    });
+                }
+            })
+            ->when($date, fn ($query) => $query->whereDate('starts_at', $date));
 
-        $isPending = fn (Lesson $l) => $l->status === Lesson::STATUS_SCHEDULED && $l->starts_at->format('Y-m-d H:i:s') <= $now;
+        // Pending tab without a date: recent days still waiting to be marked + the next days
+        $pendingQuery = fn () => $base()->where('status', Lesson::STATUS_SCHEDULED)
+            ->when(!$date, fn ($query) => $query
+                ->where('starts_at', '>=', Carbon::parse($today)->subDays(self::PENDING_DAYS))
+                ->where('starts_at', '<', Carbon::parse($today)->addDays(self::UPCOMING_DAYS + 1)));
 
-        return view('instructor-portal', [
+        $counts = [
+            'pendientes' => $pendingQuery()->count(),
+            'completadas' => $base()->where('status', Lesson::STATUS_COMPLETED)->count(),
+            'no-asistio' => $base()->where('status', Lesson::STATUS_NO_SHOW)->count(),
+        ];
+
+        $view = [
             'instructor' => $instructor,
             'token' => $token,
-            'pending' => $lessons->filter($isPending)->values(),
-            'today' => $lessons->reject($isPending)->filter(fn ($l) => $l->starts_at->format('Y-m-d') === $today)->values(),
-            'upcoming' => $lessons->filter(fn ($l) => $l->starts_at->format('Y-m-d') > $today)->values(),
-            'recent' => $lessons->reject($isPending)->filter(fn ($l) => $l->starts_at->format('Y-m-d') < $today)->reverse()->take(10)->values(),
-        ]);
+            'tab' => $tab,
+            'q' => $q,
+            'date' => $date,
+            'counts' => $counts,
+            'now' => $now,
+        ];
+
+        if ($tab === 'pendientes') {
+            $lessons = $pendingQuery()->with(['student', 'vehicle'])->orderBy('starts_at')->get();
+            $started = fn (Lesson $l) => $l->starts_at->format('Y-m-d H:i:s') <= $now;
+
+            $view['pending'] = $lessons->filter($started)->values();
+            $view['today'] = $lessons->reject($started)->filter(fn ($l) => $l->starts_at->format('Y-m-d') === $today)->values();
+            $view['upcoming'] = $lessons->reject($started)->filter(fn ($l) => $l->starts_at->format('Y-m-d') !== $today)->values();
+        } else {
+            $view['lessons'] = $base()->where('status', self::TABS[$tab])
+                ->with(['student', 'vehicle'])
+                ->orderByDesc('starts_at')
+                ->paginate(self::PER_PAGE)
+                ->withQueryString();
+        }
+
+        return view('instructor-portal', $view);
     }
 
     public function updateStatus(Request $request, string $token, int $lessonId)

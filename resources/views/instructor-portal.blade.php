@@ -16,14 +16,12 @@
     <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 @php
-    $statusLabels = [
-        'scheduled' => ['Programada', 'bg-amber-100 text-amber-700'],
-        'completed' => ['Completada', 'bg-green-100 text-green-700'],
-        'no_show' => ['No asistió', 'bg-red-100 text-red-700'],
-    ];
-    $days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    $dayText = fn ($l) => $days[$l->starts_at->dayOfWeek] . ' ' . $l->starts_at->format('m/d');
-    $timeText = fn ($l) => $l->starts_at->format('g:i A') . ' – ' . $l->ends_at->format('g:i A');
+    $searching = $q !== '' || $date;
+    // Portal URL keeping the current search
+    $tabUrl = fn ($key) => route('instructor.portal', array_filter(
+        [$token, 'tab' => $key, 'q' => $q, 'date' => $date],
+        fn ($v) => $v !== '' && $v !== null
+    ));
 @endphp
 <body class="bg-slate-100 text-slate-800 min-h-screen">
     <header class="bg-brand text-white">
@@ -34,7 +32,7 @@
         </div>
     </header>
 
-    <main class="max-w-2xl mx-auto px-4 py-5 space-y-6">
+    <main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
         @if(session('ok'))
             <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm font-semibold"><i class="fa-solid fa-circle-check"></i> {{ session('ok') }}</div>
         @endif
@@ -42,100 +40,110 @@
             <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}</div>
         @endif
 
-        @foreach([
-            ['Por marcar', 'Clases que ya empezaron. Márcalas al terminar.', $pending, 'fa-list-check', true],
-            ['Hoy', null, $today, 'fa-sun', false],
-            ['Próximos días', null, $upcoming, 'fa-calendar-days', false],
-            ['Marcadas recientemente', null, $recent, 'fa-clock-rotate-left', false],
-        ] as [$title, $help, $list, $icon, $actions])
-            @if($list->isNotEmpty() || $actions)
-                <section>
-                    <h2 class="text-xs font-black uppercase tracking-widest text-brand mb-1 flex items-center gap-2">
-                        <i class="fa-solid {{ $icon }}"></i> {{ $title }}
-                        @if($list->isNotEmpty())<span class="bg-brand text-white rounded-full px-2 py-0.5 text-[10px]">{{ $list->count() }}</span>@endif
-                    </h2>
-                    @if($help)<p class="text-xs text-slate-500 mb-2">{{ $help }}</p>@endif
+        {{-- Search: any student data and/or a date --}}
+        <form method="GET" action="{{ route('instructor.portal', $token) }}" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 space-y-2">
+            <input type="hidden" name="tab" value="{{ $tab }}">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="search" name="q" value="{{ $q }}" placeholder="Buscar estudiante: nombre, teléfono, correo, contrato, dirección…"
+                    class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40">
+            </div>
+            <div class="flex gap-2">
+                <input type="date" name="date" value="{{ $date }}" aria-label="Fecha de la clase"
+                    class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40">
+                <button class="px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold text-sm"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                @if($searching)
+                    <a href="{{ route('instructor.portal', [$token, 'tab' => $tab]) }}" class="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm" title="Limpiar búsqueda"><i class="fa-solid fa-xmark"></i></a>
+                @endif
+            </div>
+        </form>
 
-                    @if($list->isEmpty())
-                        <p class="bg-white rounded-xl border border-slate-200 px-4 py-4 text-sm text-slate-500 text-center">
-                            <i class="fa-regular fa-face-smile text-green-600"></i> No tienes clases pendientes por marcar.
-                        </p>
-                    @endif
+        {{-- Tabs --}}
+        <nav class="grid grid-cols-3 gap-1 bg-white rounded-2xl border border-slate-200 p-1 shadow-sm">
+            @foreach(['pendientes' => ['Pendientes', 'fa-list-check'], 'completadas' => ['Completadas', 'fa-circle-check'], 'no-asistio' => ['No asistió', 'fa-user-xmark']] as $key => [$label, $tabIcon])
+                <a href="{{ $tabUrl($key) }}"
+                    class="rounded-xl px-1 py-2 text-center text-xs sm:text-sm font-bold transition {{ $tab === $key ? 'bg-brand text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+                    <i class="fa-solid {{ $tabIcon }}"></i> {{ $label }}
+                    <span class="ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] {{ $tab === $key ? 'bg-white/20' : 'bg-slate-100' }}">{{ $counts[$key] }}</span>
+                </a>
+            @endforeach
+        </nav>
 
-                    <div class="space-y-3">
-                        @foreach($list as $l)
-                            @php
-                                $student = $l->student;
-                                $roadTest = $l->isRoadTest();
-                                $pickup = $student ? ($student->pickup_location ?: trim(implode(', ', array_filter([$student->address, $student->city, $student->state, $student->zip_code])))) : null;
-                                $place = $roadTest ? $l->location : $pickup;
-                                [$statusText, $statusCls] = $statusLabels[$l->status] ?? [$l->status, 'bg-slate-100 text-slate-600'];
-                            @endphp
-                            <article class="bg-white rounded-2xl border {{ $roadTest ? 'border-violet-300 ring-1 ring-violet-200' : 'border-slate-200' }} shadow-sm overflow-hidden">
-                                <div class="px-4 pt-3 pb-2 flex items-start justify-between gap-3">
-                                    <div>
-                                        <p class="text-xs font-bold text-slate-500">{{ $dayText($l) }}</p>
-                                        <p class="text-lg font-black text-slate-900 leading-tight">{{ $timeText($l) }}</p>
-                                    </div>
-                                    <div class="text-right space-y-1">
-                                        @if($roadTest)<span class="inline-block bg-violet-600 text-white text-[10px] font-black px-2 py-0.5 rounded">ROAD TEST</span>@endif
-                                        <span class="block text-[10px] font-bold px-2 py-0.5 rounded-full {{ $statusCls }}">{{ $statusText }}</span>
-                                    </div>
-                                </div>
+        @if($searching)
+            <p class="text-xs text-slate-500">
+                Resultados{{ $q !== '' ? ' para "' . $q . '"' : '' }}{{ $date ? ' del ' . \Carbon\Carbon::parse($date)->format('m/d/Y') : '' }}.
+            </p>
+        @endif
 
-                                <div class="px-4 pb-3 space-y-1.5 text-sm">
-                                    <p class="font-bold text-slate-800"><i class="fa-solid fa-user text-brand w-4"></i>
-                                        {{ $student ? trim($student->first_name . ' ' . $student->last_name) : 'Estudiante eliminado' }}
-                                        @if($student?->transmission)<span class="text-xs font-normal text-slate-500">· {{ $student->transmission }}</span>@endif
-                                    </p>
-                                    @if($student?->phone)
-                                        <p><i class="fa-solid fa-phone text-brand w-4"></i>
-                                            <a href="tel:{{ preg_replace('/[^\d+]/', '', $student->phone) }}" class="text-brand font-semibold">{{ $student->phone }}</a></p>
-                                    @endif
-                                    @if($place)
-                                        <p class="text-slate-600"><i class="fa-solid fa-location-dot text-brand w-4"></i>
-                                            <span class="text-xs font-bold uppercase text-slate-400">{{ $roadTest ? 'Examen' : 'Recoger en' }}:</span> {{ $place }}</p>
-                                        <p class="flex gap-4 text-xs pl-5">
-                                            <a href="{{ \App\Models\Lesson::googleMapsUrl($place) }}" target="_blank" rel="noopener" class="text-brand font-semibold"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
-                                            <a href="{{ \App\Models\Lesson::appleMapsUrl($place) }}" target="_blank" rel="noopener" class="text-brand font-semibold"><i class="fa-brands fa-apple"></i> Apple Maps</a>
-                                        </p>
-                                    @endif
-                                    @if($l->vehicle)
-                                        <p class="text-slate-600"><i class="fa-solid fa-car text-brand w-4"></i> {{ $l->vehicle->brand }} [{{ $l->vehicle->plate }}]</p>
-                                    @endif
-                                    @if($l->notes)
-                                        <p class="text-slate-600"><i class="fa-solid fa-note-sticky text-brand w-4"></i> {{ $l->notes }}</p>
-                                    @endif
-                                    @if($student?->restrictions)
-                                        <p class="text-slate-600"><i class="fa-solid fa-glasses text-brand w-4"></i> Restricción: {{ $student->restrictions }}</p>
-                                    @endif
-                                </div>
+        @if($tab === 'pendientes')
+            @foreach([
+                ['Por marcar', 'Clases que ya empezaron. Márcalas al terminar.', $pending, 'fa-list-check', true],
+                ['Hoy', 'Podrás marcarlas cuando empiecen.', $today, 'fa-sun', false],
+                [$date ? 'Más tarde' : 'Próximos días', null, $upcoming, 'fa-calendar-days', false],
+            ] as [$title, $help, $list, $icon, $canMark])
+                @if($list->isNotEmpty() || $canMark)
+                    <section>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-brand mb-1 flex items-center gap-2">
+                            <i class="fa-solid {{ $icon }}"></i> {{ $title }}
+                            @if($list->isNotEmpty())<span class="bg-brand text-white rounded-full px-2 py-0.5 text-[10px]">{{ $list->count() }}</span>@endif
+                        </h2>
+                        @if($help && $list->isNotEmpty())<p class="text-xs text-slate-500 mb-2">{{ $help }}</p>@endif
 
-                                @if($actions)
-                                    <div class="grid grid-cols-2 border-t border-slate-100">
-                                        <form method="POST" action="{{ route('instructor.portal.status', [$token, $l->id]) }}"
-                                            data-msg="¿Marcar la clase de {{ $student?->first_name ?: 'este estudiante' }} como COMPLETADA?" onsubmit="return confirm(this.dataset.msg)">
-                                            @csrf
-                                            <input type="hidden" name="status" value="completed">
-                                            <button class="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm"><i class="fa-solid fa-check"></i> Completada</button>
-                                        </form>
-                                        <form method="POST" action="{{ route('instructor.portal.status', [$token, $l->id]) }}"
-                                            data-msg="¿Marcar que {{ $student?->first_name ?: 'el estudiante' }} NO ASISTIÓ?" onsubmit="return confirm(this.dataset.msg)">
-                                            @csrf
-                                            <input type="hidden" name="status" value="no_show">
-                                            <button class="w-full py-3.5 bg-white hover:bg-red-50 text-red-600 font-bold text-sm border-l border-slate-100"><i class="fa-solid fa-user-xmark"></i> No asistió</button>
-                                        </form>
-                                    </div>
+                        @if($list->isEmpty())
+                            <p class="bg-white rounded-xl border border-slate-200 px-4 py-4 text-sm text-slate-500 text-center">
+                                @if($searching)
+                                    <i class="fa-regular fa-folder-open"></i> No hay clases por marcar que coincidan con la búsqueda.
+                                @else
+                                    <i class="fa-regular fa-face-smile text-green-600"></i> No tienes clases pendientes por marcar.
                                 @endif
-                            </article>
-                        @endforeach
-                    </div>
-                </section>
-            @endif
-        @endforeach
+                            </p>
+                        @endif
 
-        @if($today->isEmpty() && $upcoming->isEmpty())
-            <p class="text-center text-sm text-slate-500">No tienes clases agendadas para los próximos días.</p>
+                        <div class="space-y-3">
+                            @foreach($list as $l)
+                                @include('instructor-portal-lesson', ['l' => $l, 'canMark' => $canMark, 'lockedHint' => 'Podrás marcarla cuando empiece la clase.'])
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            @endforeach
+
+            @if($today->isEmpty() && $upcoming->isEmpty() && !$searching)
+                <p class="text-center text-sm text-slate-500">No tienes clases agendadas para los próximos días.</p>
+            @endif
+        @else
+            <section class="space-y-3">
+                @forelse($lessons as $l)
+                    @include('instructor-portal-lesson', ['l' => $l, 'canMark' => false, 'lockedHint' => 'Clase ya marcada. Si fue un error, avisa a la oficina.'])
+                @empty
+                    <p class="bg-white rounded-xl border border-slate-200 px-4 py-6 text-sm text-slate-500 text-center">
+                        <i class="fa-regular fa-folder-open"></i>
+                        @if($searching)
+                            No hay clases que coincidan con la búsqueda.
+                        @elseif($tab === 'completadas')
+                            Aún no tienes clases completadas.
+                        @else
+                            No tienes clases marcadas como "no asistió".
+                        @endif
+                    </p>
+                @endforelse
+
+                @if($lessons->hasPages())
+                    <div class="flex items-center justify-between text-sm pt-1">
+                        @if($lessons->onFirstPage())
+                            <span class="px-4 py-2 rounded-xl bg-slate-200 text-slate-400 font-bold"><i class="fa-solid fa-chevron-left"></i> Anterior</span>
+                        @else
+                            <a href="{{ $lessons->previousPageUrl() }}" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-brand font-bold"><i class="fa-solid fa-chevron-left"></i> Anterior</a>
+                        @endif
+                        <span class="text-xs text-slate-500">Página {{ $lessons->currentPage() }} de {{ $lessons->lastPage() }}</span>
+                        @if($lessons->hasMorePages())
+                            <a href="{{ $lessons->nextPageUrl() }}" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-brand font-bold">Siguiente <i class="fa-solid fa-chevron-right"></i></a>
+                        @else
+                            <span class="px-4 py-2 rounded-xl bg-slate-200 text-slate-400 font-bold">Siguiente <i class="fa-solid fa-chevron-right"></i></span>
+                        @endif
+                    </div>
+                @endif
+            </section>
         @endif
 
         <p class="text-center text-[11px] text-slate-400 pt-4">Este enlace es personal. No lo compartas.<br>

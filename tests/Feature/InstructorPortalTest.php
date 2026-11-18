@@ -79,6 +79,52 @@ class InstructorPortalTest extends TestCase
         $this->assertSame(1, substr_count($html, 'name="status" value="completed"'));
     }
 
+    public function test_lessons_are_split_into_pending_completed_and_no_show_tabs(): void
+    {
+        $this->lesson(-60);
+        $this->lesson(-24 * 60, ['status' => Lesson::STATUS_COMPLETED, 'notes' => 'nota-completada']);
+        $this->lesson(-48 * 60, ['status' => Lesson::STATUS_NO_SHOW, 'notes' => 'nota-no-show']);
+        $this->lesson(-90 * 24 * 60, ['status' => Lesson::STATUS_COMPLETED, 'notes' => 'nota-antigua']);   // old history too
+        $url = $this->portal();
+
+        $pending = $this->get($url)->assertOk()->assertDontSee('nota-completada')->assertDontSee('nota-no-show')->getContent();
+        $this->assertSame(1, substr_count($pending, 'name="status" value="completed"'));
+
+        $completed = $this->get("{$url}?tab=completadas")->assertOk()
+            ->assertSee('nota-completada')->assertSee('nota-antigua')->assertDontSee('nota-no-show')->getContent();
+        $this->assertSame(0, substr_count($completed, 'name="status"'));       // no forms: buttons disabled
+        $this->assertSame(4, substr_count($completed, 'disabled'));
+
+        $noShow = $this->get("{$url}?tab=no-asistio")->assertOk()
+            ->assertSee('nota-no-show')->assertDontSee('nota-completada')->getContent();
+        $this->assertSame(0, substr_count($noShow, 'name="status"'));
+        $this->assertSame(2, substr_count($noShow, 'disabled'));
+
+        $this->get("{$url}?tab=otra")->assertOk()->assertSee('Por marcar');   // unknown tab: pending
+    }
+
+    public function test_search_by_student_data_and_date(): void
+    {
+        $other = Student::create($this->student->only(['address', 'city', 'state', 'zip_code', 'birth_date', 'gender', 'transmission', 'paid_amount']) + [
+            'first_name' => 'Pedro', 'last_name' => 'Gomez', 'phone' => '718-222-3333', 'email' => 'pedro@test.com',
+        ]);
+        $this->lesson(-60, ['notes' => 'clase-ana']);
+        $this->lesson(-120, ['notes' => 'clase-pedro', 'student_id' => $other->id]);
+        $this->lesson(-3 * 24 * 60, ['notes' => 'clase-vieja-pedro', 'student_id' => $other->id, 'status' => Lesson::STATUS_COMPLETED]);
+        $url = $this->portal();
+
+        $this->get("{$url}?q=pedro+gomez")->assertSee('clase-pedro')->assertDontSee('clase-ana');
+        $this->get("{$url}?q=222-3333")->assertSee('clase-pedro')->assertDontSee('clase-ana');
+        $this->get("{$url}?q=ana%40test")->assertSee('clase-ana')->assertDontSee('clase-pedro');
+        $this->get("{$url}?q=nadie")->assertDontSee('clase-ana')->assertDontSee('clase-pedro')->assertSee('No hay clases');
+
+        $old = Carbon::now(config('app.school_timezone'))->subDays(3)->format('Y-m-d');
+        $this->get("{$url}?tab=completadas&date={$old}")->assertSee('clase-vieja-pedro');
+        $this->get("{$url}?tab=completadas&q=ana")->assertDontSee('clase-vieja-pedro');
+        $this->get("{$url}?date={$old}")->assertDontSee('clase-ana')->assertDontSee('clase-pedro');
+        $this->get("{$url}?date=no-es-fecha")->assertOk()->assertSee('clase-ana');
+    }
+
     public function test_instructor_marks_a_started_lesson_as_completed(): void
     {
         $lesson = $this->lesson(-50);
