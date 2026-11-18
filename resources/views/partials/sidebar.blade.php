@@ -45,6 +45,13 @@
                     'label' => 'Agenda de Clases'
                 ],
                 [
+                    'id' => 'calendario',
+                    'route' => 'calendario',
+                    'path' => 'calendario',
+                    'icon' => 'fa-solid fa-calendar-week',
+                    'label' => 'Calendario'
+                ],
+                [
                     'id' => 'paquetes',
                     'route' => 'paquetes',
                     'path' => 'paquetes',

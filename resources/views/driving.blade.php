@@ -632,6 +632,61 @@
         </div>
     </div>
 
+    <!-- ================= PANELS: CALENDARIO (week / day by instructor, drag & drop) ================= -->
+    <style>
+        .cal-col { background-image: linear-gradient(to bottom, rgb(var(--slate-700) / .55) 1px, transparent 1px), linear-gradient(to bottom, rgb(var(--slate-800) / .5) 1px, transparent 1px); }
+        .cal-off { background: repeating-linear-gradient(45deg, rgb(var(--slate-800) / .55) 0 6px, rgb(var(--slate-950) / .35) 6px 12px); }
+    </style>
+    <div id="view-calendario" class="hidden space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <!-- Toolbar -->
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-800">
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="calMove(-1)" class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-300" title="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button type="button" onclick="calMove(1)" class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-300" title="Siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <label class="relative flex items-center gap-2 font-bold text-slate-100 cursor-pointer">
+                    <span id="cal-label"></span>
+                    <i class="fa-solid fa-caret-down text-slate-400 text-xs"></i>
+                    <input type="date" id="cal-date-input" onchange="calGoTo(this.value)" class="absolute inset-0 opacity-0 cursor-pointer" aria-label="Ir a la fecha">
+                </label>
+                <div class="ml-auto flex items-center gap-2">
+                    <button type="button" onclick="calGoTo(todayLocal())" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-800 uppercase">Hoy</button>
+                    <div class="flex rounded-lg border border-slate-800 overflow-hidden text-xs font-bold uppercase">
+                        <button type="button" id="cal-view-day" onclick="calSetView('day')" class="px-3 py-1.5">Día</button>
+                        <button type="button" id="cal-view-week" onclick="calSetView('week')" class="px-3 py-1.5">Semana</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructor filter + legend -->
+            <div class="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-slate-800 text-xs">
+                <span class="font-bold uppercase tracking-wider text-slate-500 mr-1">Instructores:</span>
+                <div id="cal-instructor-chips" class="flex flex-wrap gap-1.5"></div>
+                <div class="ml-auto flex flex-wrap items-center gap-3 text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded border border-slate-700 bg-slate-900"></span> Disponible</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded border border-slate-700 cal-off"></span> Fuera de horario</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded" style="background:#7c3aed"></span> Road Test</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded" style="background:#64748b"></span> Completada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded" style="background:#dc2626"></span> No asistió</span>
+                </div>
+            </div>
+
+            <p class="px-4 py-2 text-[11px] text-slate-500 border-b border-slate-800">
+                <i class="fa-solid fa-hand-pointer text-amber-500"></i> Arrastra una clase programada para cambiar su hora, día o instructor.
+                Haz clic en un espacio libre para agendar ahí, o en una clase para ver sus opciones.
+            </p>
+
+            <!-- Selected lesson -->
+            <div id="cal-detail" class="hidden border-b border-slate-800"></div>
+
+            <!-- Grid (filled by renderCalendar) -->
+            <div id="cal-scroll" class="overflow-auto" style="max-height: 72vh">
+                <div id="cal-grid"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= PANELS: PAQUETES ================= -->
     <div id="view-paquetes" class="hidden space-y-8">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -1434,6 +1489,7 @@
             document.getElementById('view-inscripcion').classList.add('hidden');
             document.getElementById('view-abonos').classList.add('hidden');
             document.getElementById('view-agenda').classList.add('hidden');
+            document.getElementById('view-calendario').classList.add('hidden');
             document.getElementById('view-paquetes').classList.add('hidden');
             document.getElementById('view-registro-instructor').classList.add('hidden');
             document.getElementById('view-registro-vehiculo').classList.add('hidden');
@@ -1486,6 +1542,10 @@
                 sectionPre.innerText = "Programación";
                 sectionTitle.innerText = "Agenda de Clases";
                 cancelLessonEdit();
+            } else if (tabId === 'calendario') {
+                sectionPre.innerText = "Programación";
+                sectionTitle.innerText = "Calendario de Clases";
+                renderCalendar();
             } else if (tabId === 'paquetes') {
                 sectionPre.innerText = "Catálogo";
                 sectionTitle.innerText = "Paquetes";
@@ -3814,6 +3874,7 @@
 
             handleAgendaStudentChange();
             renderLessonsTable();
+            if (calendarVisible()) renderCalendar();
         }
 
         function getAgendaStudent() {
@@ -4169,6 +4230,416 @@
             if (n.failed && n.failed.length) {
                 showToast(`No se pudo notificar a: ${n.failed.join(', ')}. Revisa sus datos de contacto o la configuración de correo.`, 'warning');
             }
+        }
+
+        // ---------- Calendar: lessons of every instructor by week / day, drag & drop to reschedule ----------
+        const CAL_SLOT_MIN = 15;     // grid step (minutes)
+        const CAL_SLOT_PX = 22;      // height of one step
+        const CAL_COLORS = ['#2563eb', '#16a34a', '#0891b2', '#ea580c', '#db2777', '#4f46e5', '#65a30d', '#ca8a04', '#0d9488', '#be123c'];
+        const CAL_DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const CAL_MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+        let calView = 'week';
+        let calDate = todayLocal();
+        let calSelectedId = null;     // lesson shown in the detail bar
+        let calDrag = null;           // { lesson, grab, target }
+        let calRangeFrom = 7 * 60;    // first minute shown in the grid
+        let calHidden = new Set();    // instructor db_ids hidden by the filter
+        try {
+            calView = localStorage.getItem('nyds-cal-view') === 'day' ? 'day' : 'week';
+            calHidden = new Set(JSON.parse(localStorage.getItem('nyds-cal-hidden') || '[]'));
+        } catch (e) {}
+
+        function calSave() {
+            try {
+                localStorage.setItem('nyds-cal-view', calView);
+                localStorage.setItem('nyds-cal-hidden', JSON.stringify([...calHidden]));
+            } catch (e) {}
+        }
+
+        function calParse(ymd) { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d); }
+        function calYmd(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+        function calAddDays(ymd, n) { const d = calParse(ymd); d.setDate(d.getDate() + n); return calYmd(d); }
+        function calMin(hhmm) { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
+        function calHhmm(min) { return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`; }
+        function calTime12(min) {
+            const h = Math.floor(min / 60), m = min % 60;
+            return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+        }
+        function calDayText(ymd) { const d = calParse(ymd); return `${CAL_DAY_NAMES[d.getDay()]} ${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; }
+        function calNowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+
+        function calDays() {
+            if (calView === 'day') return [calDate];
+            const start = calAddDays(calDate, -calParse(calDate).getDay());   // weeks start on Sunday
+            return [...Array(7)].map((_, i) => calAddDays(start, i));
+        }
+
+        function calColor(ins) {
+            const idx = [...instructors].sort((a, b) => a.db_id - b.db_id).findIndex(i => i.db_id === ins.db_id);
+            return CAL_COLORS[Math.max(0, idx) % CAL_COLORS.length];
+        }
+
+        // Working hours of the instructor that day: null = doesn't work, [from, to] in minutes.
+        // Instructors without a schedule can be booked at any time (same rule as the server).
+        function calWorkHours(ins, ymd) {
+            if (!ins.work_days || !ins.work_days.length || !ins.work_start || !ins.work_end) return [0, 24 * 60];
+            const iso = calParse(ymd).getDay() || 7;
+            return ins.work_days.includes(iso) ? [calMin(ins.work_start), calMin(ins.work_end)] : null;
+        }
+
+        function calActive(l) { return l.status !== 'cancelled'; }
+
+        // Instructors in the calendar: not suspended, or with lessons in the visible days
+        function calInstructors(days) {
+            return instructors.filter(i => i.status !== 'Suspendido'
+                || lessons.some(l => l.instructor_id === i.db_id && calActive(l) && days.includes(l.date)));
+        }
+
+        function calMove(step) {
+            calDate = calAddDays(calDate, step * (calView === 'day' ? 1 : 7));
+            renderCalendar();
+        }
+
+        function calGoTo(ymd) {
+            if (!ymd) return;
+            calDate = ymd;
+            renderCalendar();
+        }
+
+        function calSetView(view) {
+            calView = view;
+            calSave();
+            renderCalendar();
+        }
+
+        function calToggleInstructor(dbId) {
+            calHidden.has(dbId) ? calHidden.delete(dbId) : calHidden.add(dbId);
+            calSave();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const days = calDays();
+            const all = calInstructors(days);
+            const shown = all.filter(i => !calHidden.has(i.db_id));
+            const today = todayLocal();
+
+            // Toolbar
+            const first = calParse(days[0]), last = calParse(days[days.length - 1]);
+            document.getElementById('cal-label').textContent = calView === 'day'
+                ? `${CAL_DAY_NAMES[first.getDay()]} ${first.getDate()} ${CAL_MONTHS[first.getMonth()]} ${first.getFullYear()}`
+                : `${first.getDate()} ${first.getMonth() !== last.getMonth() ? CAL_MONTHS[first.getMonth()] + ' ' : ''}– ${last.getDate()} ${CAL_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+            document.getElementById('cal-date-input').value = calDate;
+            ['day', 'week'].forEach(v => {
+                document.getElementById(`cal-view-${v}`).className = `px-3 py-1.5 ${calView === v ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800'}`;
+            });
+
+            document.getElementById('cal-instructor-chips').innerHTML = all.map(i => {
+                const on = !calHidden.has(i.db_id);
+                return `<button type="button" onclick="calToggleInstructor(${i.db_id})"
+                    class="flex items-center gap-1.5 px-2 py-1 rounded-full border font-bold transition ${on ? 'border-slate-700 text-slate-200' : 'border-slate-800 text-slate-600 line-through'}">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background:${on ? calColor(i) : 'transparent'}; border:1px solid ${calColor(i)}"></span>${esc(i.name)}</button>`;
+            }).join('') || '<span class="text-slate-500">No hay instructores registrados.</span>';
+
+            const grid = document.getElementById('cal-grid');
+            if (!shown.length) {
+                grid.innerHTML = '<p class="text-sm text-slate-500 text-center py-16">Selecciona al menos un instructor para ver su calendario.</p>';
+                renderCalendarDetail();
+                return;
+            }
+
+            // Hours shown: from the earliest start to the latest end (working hours and lessons), whole hours
+            let from = 24 * 60, to = 0;
+            shown.forEach(i => days.forEach(d => {
+                const wh = calWorkHours(i, d);
+                if (wh && (wh[0] > 0 || wh[1] < 24 * 60)) { from = Math.min(from, wh[0]); to = Math.max(to, wh[1]); }
+            }));
+            lessons.filter(l => calActive(l) && days.includes(l.date) && shown.some(i => i.db_id === l.instructor_id)).forEach(l => {
+                from = Math.min(from, calMin(l.time));
+                to = Math.max(to, calMin(l.end_time) || 24 * 60);
+            });
+            if (from >= to) { from = 7 * 60; to = 19 * 60; }
+            from = Math.floor(from / 60) * 60;
+            to = Math.min(24 * 60, Math.ceil(to / 60) * 60);
+            calRangeFrom = from;
+            const height = (to - from) / CAL_SLOT_MIN * CAL_SLOT_PX;
+            const hourPx = 60 / CAL_SLOT_MIN * CAL_SLOT_PX;
+
+            const colMin = calView === 'day' ? 170 : 84;
+            const cols = shown.length * days.length;
+            let html = `<div class="grid" style="grid-template-columns: 64px repeat(${cols}, minmax(${colMin}px, 1fr)); min-width: ${64 + cols * colMin}px">`;
+
+            // Header row 1: instructors
+            html += `<div class="sticky left-0 top-0 z-30 bg-slate-900 border-b border-slate-800" style="height:44px"></div>`;
+            shown.forEach(i => {
+                html += `<div class="sticky top-0 z-20 flex items-center justify-center gap-2 px-2 text-white font-bold text-xs uppercase tracking-wide border-l border-white/20 truncate"
+                    style="grid-column: span ${days.length}; height:44px; background:${calColor(i)}" title="${esc(i.shift || '')}">
+                    ${i.instructor_photo_url ? `<img src="${esc(i.instructor_photo_url)}" class="w-7 h-7 rounded-full object-cover border border-white/40" alt="">` : '<i class="fa-solid fa-circle-user text-xl opacity-80"></i>'}
+                    <span class="truncate">${esc(i.name)}</span></div>`;
+            });
+
+            // Header row 2: days
+            html += `<div class="sticky left-0 z-30 bg-slate-900 border-b border-slate-800" style="top:44px; height:42px"></div>`;
+            shown.forEach(i => days.forEach((d, idx) => {
+                const dt = calParse(d);
+                const off = !calWorkHours(i, d);
+                html += `<div class="sticky z-20 bg-slate-900 border-b border-slate-800 px-2 py-1 leading-tight ${idx === 0 ? 'border-l-2 border-l-slate-600' : 'border-l border-l-slate-800'}" style="top:44px; height:42px">
+                    <p class="text-[10px] font-bold uppercase ${off ? 'text-slate-600' : 'text-slate-400'}">${CAL_DAY_NAMES[dt.getDay()]}${off ? ' · libre' : ''}</p>
+                    <p class="text-base font-black ${d === today ? 'text-amber-500' : 'text-slate-200'}">${dt.getDate()}</p></div>`;
+            }));
+
+            // Time gutter
+            html += `<div class="sticky left-0 z-10 bg-slate-900 border-r border-slate-800" style="height:${height}px">`;
+            for (let m = from; m < to; m += 60) {
+                html += `<span class="absolute right-2 text-[10px] font-semibold text-slate-500" style="top:${(m - from) / CAL_SLOT_MIN * CAL_SLOT_PX + 2}px">${calTime12(m)}</span>`;
+                html += `<span class="absolute right-2 text-[9px] text-slate-600" style="top:${(m + 30 - from) / CAL_SLOT_MIN * CAL_SLOT_PX + 2}px">${m + 30 < to ? `${(Math.floor(m / 60) % 12) || 12}:30` : ''}</span>`;
+            }
+            html += `</div>`;
+
+            // Day columns
+            const nowMin = calNowMin();
+            const px = min => (min - from) / CAL_SLOT_MIN * CAL_SLOT_PX;
+            shown.forEach(i => days.forEach((d, idx) => {
+                const wh = calWorkHours(i, d);
+                let layers = '';
+
+                // Out of the working schedule
+                if (!wh) {
+                    layers += `<div class="cal-off absolute inset-x-0 pointer-events-none" style="top:0; height:${height}px"></div>`;
+                } else {
+                    if (wh[0] > from) layers += `<div class="cal-off absolute inset-x-0 pointer-events-none" style="top:0; height:${px(Math.min(wh[0], to))}px"></div>`;
+                    if (wh[1] < to) layers += `<div class="cal-off absolute inset-x-0 pointer-events-none" style="top:${px(Math.max(wh[1], from))}px; bottom:0"></div>`;
+                }
+
+                // Time already passed
+                if (d < today) {
+                    layers += `<div class="absolute inset-0 bg-slate-950/40 pointer-events-none"></div>`;
+                } else if (d === today && nowMin > from) {
+                    layers += `<div class="absolute inset-x-0 top-0 bg-slate-950/40 pointer-events-none" style="height:${Math.min(height, px(nowMin))}px"></div>`;
+                    if (nowMin < to) layers += `<div class="absolute inset-x-0 border-t-2 border-red-500 z-10 pointer-events-none" style="top:${px(nowMin)}px"></div>`;
+                }
+
+                // Lessons
+                lessons.filter(l => l.instructor_id === i.db_id && l.date === d && calActive(l)).forEach(l => {
+                    const start = calMin(l.time), end = calMin(l.end_time) || 24 * 60;
+                    const movable = l.status === 'scheduled';
+                    const roadTest = isRoadTest(l);
+                    const bg = l.status === 'completed' ? '#64748b' : l.status === 'no_show' ? '#dc2626' : roadTest ? '#7c3aed' : calColor(i);
+                    const icon = l.status === 'completed' ? 'fa-check' : l.status === 'no_show' ? 'fa-user-xmark' : roadTest ? 'fa-flag-checkered' : 'fa-car';
+                    const h = Math.max(CAL_SLOT_PX, px(end) - px(start)) - 2;
+                    layers += `<div ${movable ? `draggable="true" ondragstart="calDragStart(event, ${l.db_id})" ondragend="calDragEnd(event)"` : ''}
+                        onclick="calSelect(event, ${l.db_id})"
+                        class="cal-lesson absolute left-0.5 right-0.5 z-[5] rounded-md px-1.5 py-1 text-[10px] leading-tight text-white overflow-hidden shadow-md ${movable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${calSelectedId === l.db_id ? 'ring-2 ring-amber-400' : ''}"
+                        style="top:${px(start) + 1}px; height:${h}px; background:${bg}"
+                        title="${esc(`${l.student_name} · ${calTime12(start)} – ${calTime12(end)} · ${roadTest ? 'Road Test' : 'Clase'} (${lessonStatusLabel(l.status)})${movable ? ' · Arrastra para mover' : ''}`)}">
+                        <p class="font-bold whitespace-nowrap"><i class="fa-solid ${icon}"></i> ${calTime12(start)}</p>
+                        <p class="font-bold uppercase break-words">${esc(l.student_name)}</p>
+                        ${h > 44 ? `<p class="opacity-85 truncate">${roadTest ? 'Road Test' : `Clase ${l.duration_minutes} min`}</p>` : ''}
+                    </div>`;
+                });
+
+                html += `<div class="cal-col relative ${idx === 0 ? 'border-l-2 border-l-slate-600' : 'border-l border-l-slate-800'}"
+                    style="height:${height}px; background-size: 100% ${hourPx}px, 100% ${CAL_SLOT_PX}px"
+                    data-ins="${i.db_id}" data-date="${d}"
+                    ondragover="calDragOver(event)" ondrop="calDrop(event)"
+                    onmousemove="calHover(event)" onmouseleave="calHideGhost(this)" onclick="calSlotClick(event)">
+                    ${layers}
+                    <div class="cal-ghost hidden absolute left-0.5 right-0.5 z-20 rounded-md border-2 border-dashed text-[10px] font-bold px-1.5 py-1 pointer-events-none"></div>
+                </div>`;
+            }));
+
+            html += `</div>`;
+            grid.innerHTML = html;
+            renderCalendarDetail();
+        }
+
+        // Start minute for a pointer position inside a column (snapped to the grid)
+        function calPointerMin(e, col, grab = 0) {
+            const y = e.clientY - col.getBoundingClientRect().top - grab;
+            return calRangeFrom + Math.round(y / CAL_SLOT_PX) * CAL_SLOT_MIN;
+        }
+
+        // Why a lesson can't go to that instructor / date / time (null = it looks free).
+        // The server checks every rule again (package, road test gaps, etc.).
+        function calSlotProblem(lesson, insId, date, start, minutes) {
+            const end = start + minutes;
+            const today = todayLocal();
+            if (date < today || (date === today && start < calNowMin())) return 'No se puede agendar en una hora que ya pasó.';
+            if (end > 24 * 60) return 'La clase debe terminar el mismo día.';
+
+            const ins = instructors.find(i => i.db_id === insId);
+            const wh = ins && calWorkHours(ins, date);
+            if (!wh) return `${ins ? ins.name : 'El instructor'} no trabaja ese día.`;
+            if (start < wh[0] || end > wh[1]) return `Fuera del horario de ${ins.name} (${ins.shift}).`;
+
+            const overlaps = l => l.date === date && calActive(l) && (!lesson || l.db_id !== lesson.db_id)
+                && calMin(l.time) < end && (calMin(l.end_time) || 24 * 60) > start;
+            if (lessons.some(l => l.instructor_id === insId && overlaps(l))) return 'El instructor ya tiene una clase en ese horario.';
+            if (lesson && lessons.some(l => l.student_id === lesson.student_id && overlaps(l))) return 'El estudiante ya tiene una clase en ese horario.';
+            return null;
+        }
+
+        function calShowGhost(col, start, minutes, ok, text) {
+            document.querySelectorAll('.cal-ghost').forEach(g => { if (g.parentElement !== col) g.classList.add('hidden'); });
+            const ghost = col.querySelector('.cal-ghost');
+            ghost.style.top = `${(start - calRangeFrom) / CAL_SLOT_MIN * CAL_SLOT_PX + 1}px`;
+            ghost.style.height = `${minutes / CAL_SLOT_MIN * CAL_SLOT_PX - 2}px`;
+            ghost.className = `cal-ghost absolute left-0.5 right-0.5 z-20 rounded-md border-2 border-dashed text-[10px] font-bold px-1.5 py-1 pointer-events-none overflow-hidden
+                ${ok ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400' : 'border-red-500 bg-red-500/15 text-red-400'}`;
+            ghost.textContent = text;
+        }
+
+        function calHideGhost(col) {
+            if (!calDrag) col.querySelector('.cal-ghost')?.classList.add('hidden');
+        }
+
+        // Hover on an empty slot: shows whether a lesson fits there
+        function calHover(e) {
+            if (calDrag) return;
+            const col = e.currentTarget;
+            if (e.target !== col) return calHideGhost(col);
+            const start = Math.floor((e.clientY - col.getBoundingClientRect().top) / CAL_SLOT_PX) * CAL_SLOT_MIN + calRangeFrom;
+            const problem = calSlotProblem(null, Number(col.dataset.ins), col.dataset.date, start, LESSON_MINUTES);
+            if (problem) return calHideGhost(col);
+            calShowGhost(col, start, LESSON_MINUTES, true, `+ ${calTime12(start)}`);
+        }
+
+        // Click on an empty slot: book a lesson there
+        function calSlotClick(e) {
+            const col = e.currentTarget;
+            if (e.target !== col) return;
+            const insId = Number(col.dataset.ins), date = col.dataset.date;
+            const start = Math.floor((e.clientY - col.getBoundingClientRect().top) / CAL_SLOT_PX) * CAL_SLOT_MIN + calRangeFrom;
+            const problem = calSlotProblem(null, insId, date, start, LESSON_MINUTES);
+            if (problem) return showToast(problem, 'warning');
+
+            const ins = instructors.find(i => i.db_id === insId);
+            if (!confirm(`¿Agendar una clase con ${ins.name} el ${calDayText(date)} a las ${calTime12(start)}?`)) return;
+            switchTab('agenda');
+            setLessonType('lesson');
+            document.getElementById('lesson-instructor').value = insId;
+            document.getElementById('lesson-date').value = date;
+            document.getElementById('lesson-time').value = calHhmm(start);
+            handleAgendaStudentChange();
+            document.getElementById('lesson-student').focus();
+            showToast('Selecciona el estudiante para completar la clase.', 'info');
+        }
+
+        function calDragStart(e, dbId) {
+            const lesson = lessons.find(l => l.db_id === dbId);
+            if (!lesson || lesson.status !== 'scheduled') return e.preventDefault();
+            const el = e.currentTarget;
+            calDrag = { lesson, grab: e.clientY - el.getBoundingClientRect().top, target: null };
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(dbId));
+            setTimeout(() => el.classList.add('opacity-40'), 0);
+        }
+
+        function calDragEnd(e) {
+            e.currentTarget.classList.remove('opacity-40');
+            calDrag = null;
+            document.querySelectorAll('.cal-ghost').forEach(g => g.classList.add('hidden'));
+        }
+
+        function calDragOver(e) {
+            if (!calDrag) return;
+            e.preventDefault();
+            const col = e.currentTarget;
+            const l = calDrag.lesson;
+            const minutes = l.duration_minutes;
+            const insId = Number(col.dataset.ins), date = col.dataset.date;
+            const start = calPointerMin(e, col, calDrag.grab);
+            const problem = calSlotProblem(l, insId, date, start, minutes);
+            calDrag.target = { insId, date, start, problem };
+            e.dataTransfer.dropEffect = problem ? 'none' : 'move';
+            calShowGhost(col, start, minutes, !problem, problem ? problem : `${calTime12(start)} – ${calTime12(start + minutes)}`);
+        }
+
+        function calDrop(e) {
+            e.preventDefault();
+            if (!calDrag || !calDrag.target) return;
+            const { lesson: l, target: t } = calDrag;
+            calDrag = null;
+            document.querySelectorAll('.cal-ghost').forEach(g => g.classList.add('hidden'));
+
+            if (t.problem) return showToast(t.problem, 'warning');
+            if (t.insId === l.instructor_id && t.date === l.date && calHhmm(t.start) === l.time) return;
+
+            const ins = instructors.find(i => i.db_id === t.insId);
+            const what = isRoadTest(l) ? 'el Road Test' : 'la clase';
+            const change = t.insId !== l.instructor_id ? ` con ${ins.name} (antes ${l.instructor_name})` : '';
+            if (!confirm(`¿Mover ${what} de ${l.student_name}?\n\nDe: ${calDayText(l.date)} ${calTime12(calMin(l.time))}\nA:  ${calDayText(t.date)} ${calTime12(t.start)}${change}\n\nSe notificará al estudiante y al instructor.`)) return;
+
+            apiRequest(`{{ url('lessons') }}/${l.db_id}`, 'PUT', {
+                instructor_id: t.insId,
+                date: t.date,
+                time: calHhmm(t.start),
+                duration_minutes: l.duration_minutes,
+                location: l.location,
+                notes: l.notes,
+            }).then(res => {
+                const idx = lessons.findIndex(x => x.db_id === res.lesson.db_id);
+                if (idx !== -1) lessons[idx] = res.lesson;
+                lessons.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+                const student = students.find(s => s.db_id === res.student.db_id);
+                if (student) student.used_minutes = res.student.used_minutes;
+
+                showToast(`${isRoadTest(res.lesson) ? 'Road Test' : 'Clase'} movida: ${res.lesson.student_name}, ${calDayText(res.lesson.date)} ${calTime12(calMin(res.lesson.time))} con ${res.lesson.instructor_name}.`, 'success');
+                showLessonNotifications(res.notifications);
+                calSelectedId = res.lesson.db_id;
+                initAgenda();   // refreshes the agenda and the calendar
+            }).catch(err => {
+                showToast(err.message, 'warning');
+                renderCalendar();
+            });
+        }
+
+        function calSelect(e, dbId) {
+            e.stopPropagation();
+            calSelectedId = calSelectedId === dbId ? null : dbId;
+            renderCalendar();
+        }
+
+        // Bar with the selected lesson's data and actions
+        function renderCalendarDetail() {
+            const box = document.getElementById('cal-detail');
+            const l = calSelectedId ? lessons.find(x => x.db_id === calSelectedId) : null;
+            if (!l || !calActive(l)) {
+                calSelectedId = null;
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            const student = students.find(s => s.db_id === l.student_id);
+            const roadTest = isRoadTest(l);
+            const scheduled = l.status === 'scheduled';
+            const btn = 'px-3 py-1.5 rounded-lg text-xs font-bold transition';
+            box.classList.remove('hidden');
+            box.innerHTML = `
+                <div class="px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 bg-slate-950/40 text-sm">
+                    <div>
+                        <p class="font-bold text-slate-100">${esc(l.student_name)} ${roadTest ? '<span class="ml-1 text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded">ROAD TEST</span>' : ''}</p>
+                        <p class="text-xs text-slate-400">${calDayText(l.date)} · ${calTime12(calMin(l.time))} – ${calTime12(calMin(l.end_time))} · ${esc(l.instructor_name)}${l.vehicle ? ' · ' + esc(l.vehicle) : ''}</p>
+                        ${student?.phone ? `<p class="text-xs text-slate-400"><i class="fa-solid fa-phone"></i> ${esc(student.phone)}</p>` : ''}
+                        ${roadTest && l.location ? `<p class="text-xs text-slate-400"><i class="fa-solid fa-location-dot"></i> ${esc(l.location)}</p>` : ''}
+                        ${l.notes ? `<p class="text-xs text-slate-500"><i class="fa-solid fa-note-sticky"></i> ${esc(l.notes)}</p>` : ''}
+                    </div>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">${lessonStatusLabel(l.status)}</span>
+                    <div class="ml-auto flex flex-wrap gap-1.5">
+                        <button type="button" onclick="openStudentProfile(${l.student_id})" class="${btn} bg-slate-800 text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-eye"></i> Estudiante</button>
+                        ${scheduled ? `
+                            <button type="button" onclick="switchTab('agenda'); startLessonReschedule(${l.db_id})" class="${btn} bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-slate-950"><i class="fa-solid fa-pen"></i> Editar</button>
+                            <button type="button" onclick="setLessonStatus(${l.db_id}, 'completed')" class="${btn} bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-slate-950"><i class="fa-solid fa-check"></i> Completada</button>
+                            <button type="button" onclick="setLessonStatus(${l.db_id}, 'no_show')" class="${btn} bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-slate-950"><i class="fa-solid fa-user-xmark"></i> No asistió</button>
+                            <button type="button" onclick="setLessonStatus(${l.db_id}, 'cancelled')" class="${btn} bg-slate-800 text-slate-400 hover:bg-red-600 hover:text-white"><i class="fa-solid fa-ban"></i> Cancelar</button>` : ''}
+                        <button type="button" onclick="calSelectedId = null; renderCalendar()" class="${btn} text-slate-500 hover:text-slate-200" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>`;
+        }
+
+        function calendarVisible() {
+            return !document.getElementById('view-calendario').classList.contains('hidden');
         }
 
         function renderLessonsTable() {
