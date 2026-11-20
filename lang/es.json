@@ -798,5 +798,22 @@
     "Ocupado (instructor)": "Ocupado (instructor)",
     "Pasado": "Pasado",
     "Se mantiene el día y la hora actuales.": "Se mantiene el día y la hora actuales.",
-    "Sin horas libres": "Sin horas libres"
+    "Sin horas libres": "Sin horas libres",
+    "Abrir el recibo al guardar": "Abrir el recibo al guardar",
+    "El monto no puede superar el saldo pendiente.": "El monto no puede superar el saldo pendiente.",
+    "Guardar pago": "Guardar pago",
+    "Monto (USD)": "Monto (USD)",
+    "Máximo :amount.": "Máximo :amount.",
+    "Nuevo pago": "Nuevo pago",
+    "Queda al día.": "Queda al día.",
+    "Registrar un nuevo pago": "Registrar un nuevo pago",
+    "Saldo completo": "Saldo completo",
+    "Saldo después del pago: :amount": "Saldo después del pago: :amount",
+    "Saldo pendiente": "Saldo pendiente",
+    "Cargo": "Cargo",
+    "Invoice :number. :package": "Invoice :number. :package",
+    "Nota": "Nota",
+    "Pago sobre saldo anterior :amount": "Pago sobre saldo anterior :amount",
+    "Sin movimientos.": "Sin movimientos.",
+    "Totales": "Totales"
 }

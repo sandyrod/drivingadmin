@@ -123,6 +123,7 @@
                     <button type="button" data-sf-tab="profile" onclick="switchStudentFormTab('profile')" class="sf-tab">{{ __('Perfil') }}</button>
                     <button type="button" data-sf-tab="lessons" onclick="switchStudentFormTab('lessons')" class="sf-tab sf-needs-student">{{ __('Clases') }} <span id="sf-lessons-count"></span></button>
                     <button type="button" data-sf-tab="payments" onclick="switchStudentFormTab('payments')" class="sf-tab sf-needs-student">{{ __('Recibos') }} <span id="sf-payments-count"></span></button>
+                    <button type="button" data-sf-tab="ledger" onclick="switchStudentFormTab('ledger')" class="sf-tab sf-needs-student">Ledger</button>
                     <button type="button" data-sf-tab="notes" onclick="switchStudentFormTab('notes')" class="sf-tab sf-needs-student">{{ __('Notas') }} <span id="sf-notes-count"></span></button>
                 </div>
 
@@ -346,6 +347,7 @@
                 <!-- ===== LESSONS / RECEIPTS / NOTES ===== -->
                 <div id="sf-tab-lessons" class="hidden p-4"></div>
                 <div id="sf-tab-payments" class="hidden p-4"></div>
+                <div id="sf-tab-ledger" class="hidden p-4"></div>
                 <div id="sf-tab-notes" class="hidden p-4">
                     <div class="max-w-3xl">
                         <textarea id="sf-note-body" rows="3" maxlength="2000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500"

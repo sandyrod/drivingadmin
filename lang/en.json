@@ -798,5 +798,22 @@
     "Ocupado (instructor)": "Busy (instructor)",
     "Pasado": "Past",
     "Se mantiene el día y la hora actuales.": "The current day and time are kept.",
-    "Sin horas libres": "Fully booked"
+    "Sin horas libres": "Fully booked",
+    "Abrir el recibo al guardar": "Open the receipt after saving",
+    "El monto no puede superar el saldo pendiente.": "The amount can't exceed the outstanding balance.",
+    "Guardar pago": "Save Payment",
+    "Monto (USD)": "Amount (USD)",
+    "Máximo :amount.": "Maximum :amount.",
+    "Nuevo pago": "New Payment",
+    "Queda al día.": "Fully paid.",
+    "Registrar un nuevo pago": "Record a new payment",
+    "Saldo completo": "Full Balance",
+    "Saldo después del pago: :amount": "Balance after payment: :amount",
+    "Saldo pendiente": "Outstanding Balance",
+    "Cargo": "Charge",
+    "Invoice :number. :package": "Invoice :number. :package",
+    "Nota": "Note",
+    "Pago sobre saldo anterior :amount": "Payment on previous balance :amount",
+    "Sin movimientos.": "No transactions.",
+    "Totales": "Totals"
 }

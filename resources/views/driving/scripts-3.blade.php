@@ -154,7 +154,7 @@
 
         function switchStudentFormTab(tab) {
             if (tab !== 'profile' && !getEditingStudent()) tab = 'profile';
-            ['profile', 'lessons', 'payments', 'notes'].forEach(t => {
+            ['profile', 'lessons', 'payments', 'ledger', 'notes'].forEach(t => {
                 document.getElementById(`sf-tab-${t}`).classList.toggle('hidden', t !== tab);
             });
             document.querySelectorAll('[data-sf-tab]').forEach(b => b.classList.toggle('active', b.dataset.sfTab === tab));
@@ -167,7 +167,7 @@
             if (action === 'agenda') openAgendaForStudent(student.db_id);
             else if (action === 'road_test') openAgendaForStudent(student.db_id, 'road_test');
             else if (action === 'pay') {
-                if (student.debt > 0) simulateCobro(student.id);
+                if (student.debt > 0) openPaymentModal(student.db_id);
                 else showToast(__('El estudiante no tiene saldo pendiente.'), 'info');
             } else if (action === 'invoice') openInvoice(student.db_id);
             else if (action === 'email') {
@@ -337,6 +337,8 @@
                     </table>
                 </div>` : `<p class="text-sm text-slate-500 text-center py-8">${__('El estudiante no tiene clases agendadas.')}</p>`;
 
+            renderStudentLedger(has ? student : null, ownPayments);
+
             // Receipts tab
             if (!has) {
                 document.getElementById('sf-tab-payments').innerHTML = '';
@@ -350,7 +352,8 @@
                     <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 min-w-[120px]"><p class="text-[10px] uppercase font-bold text-slate-500">${__('Saldo')}</p><p class="text-lg font-black ${student.debt > 0 ? 'text-red-500' : 'text-green-500'}">${money(student.debt)}</p></div>
                     <span class="flex-1"></span>
                     <button type="button" onclick="studentFormAction('invoice')" class="sf-action"><i class="fa-solid fa-file-invoice"></i> ${__('Invoice')}</button>
-                    <button type="button" onclick="studentFormAction('pay')" class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 px-3 py-2 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-dollar-sign"></i> ${__('Registrar pago')}</button>
+                    <button type="button" onclick="openPaymentModal(${student.db_id})" ${student.debt > 0 ? '' : 'disabled'} title="${escapeAttr(student.debt > 0 ? __('Registrar un nuevo pago') : __('El estudiante no tiene saldo pendiente.'))}"
+                        class="bg-emerald-500 text-slate-950 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-plus"></i> ${__('Nuevo pago')}</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
