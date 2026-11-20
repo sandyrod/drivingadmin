@@ -3,10 +3,12 @@
             const entries = [];
             const invoiceNo = `INV-${String(student.db_id).padStart(4, '0')}`;
 
-            // Charge: the package bought (price at purchase time)
-            if (student.cost > 0 || student.package_id) {
+            // Charge: the enrollment package (price at purchase time). student.cost includes the additional packages.
+            const charges = student.charges || [];
+            const baseCost = Math.max(0, Math.round((student.cost - charges.reduce((sum, c) => sum + c.amount, 0)) * 100) / 100);
+            if (baseCost > 0 || student.package_id) {
                 entries.push({
-                    kind: 'charge', date: student.date, ref: invoiceNo, charge: student.cost, payment: 0,
+                    kind: 'charge', date: student.date, ref: invoiceNo, charge: baseCost, payment: 0,
                     note: __('Invoice :number. :package', { number: invoiceNo, package: student.plan || __('Paquete') }),
                     print: () => `openInvoice(${student.db_id})`,
                 });
@@ -19,13 +21,21 @@
                 entries.push({ kind: 'payment', date: student.date, ref: '—', charge: 0, payment: initial, note: __('Pago inicial (inscripción)') });
             }
 
-            ownPayments.slice()
-                .sort((a, b) => a.payment_date.localeCompare(b.payment_date) || a.db_id - b.db_id)
-                .forEach(p => entries.push({
-                    kind: 'payment', date: p.payment_date, ref: p.id, charge: 0, payment: p.amount,
+            // Additional packages and payments, by date (a charge goes before a payment of the same day)
+            const moves = [
+                ...charges.map(c => ({
+                    kind: 'charge', date: c.date, ref: c.number, charge: c.amount, payment: 0, order: 0, id: c.db_id,
+                    note: __('Invoice :number. :package', { number: c.number, package: c.description }), notes: c.notes,
+                    print: () => `openChargeInvoice(${c.db_id})`,
+                })),
+                ...ownPayments.map(p => ({
+                    kind: 'payment', date: p.payment_date, ref: p.id, charge: 0, payment: p.amount, order: 1, id: p.db_id,
                     method: paymentMethodLabel(p.payment_method), notes: p.notes,
                     print: () => `printReceipt(${p.db_id})`,
-                }));
+                })),
+            ];
+            moves.sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order || a.id - b.id)
+                .forEach(m => entries.push(m));
 
             // Running balance and "payment on previous balance" text
             let balance = 0;
@@ -38,6 +48,19 @@
             });
             return entries;
         }
+
+        function toggleLedgerMenu(e) {
+            e.stopPropagation();
+            document.getElementById('ledger-menu')?.classList.toggle('hidden');
+        }
+
+        function closeLedgerMenu() {
+            document.getElementById('ledger-menu')?.classList.add('hidden');
+        }
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#ledger-menu')) closeLedgerMenu();
+        });
 
         function renderStudentLedger(student, ownPayments) {
             const box = document.getElementById('sf-tab-ledger');
@@ -55,11 +78,26 @@
 
             box.innerHTML = `
                 <div class="flex items-center gap-3 mb-4">
-                    <button type="button" onclick="openPaymentModal(${student.db_id})" ${canPay ? '' : 'disabled'}
-                        title="${escapeAttr(canPay ? __('Registrar un nuevo pago') : __('El estudiante no tiene saldo pendiente.'))}"
-                        class="w-10 h-10 rounded-full bg-sky-600 text-white shadow-lg hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
+                    <div class="relative">
+                        <button type="button" onclick="toggleLedgerMenu(event)" title="${escapeAttr(__('Nuevo movimiento'))}"
+                            class="w-10 h-10 rounded-full bg-sky-600 text-white shadow-lg hover:bg-sky-700 transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <div id="ledger-menu" class="hidden absolute left-0 top-12 z-20 w-60 rounded-xl border border-slate-800 bg-slate-900 shadow-2xl p-1.5">
+                            <button type="button" onclick="closeLedgerMenu(); openPaymentModal(${student.db_id})" ${canPay ? '' : 'disabled'}
+                                class="w-full text-left flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                                <i class="fa-solid fa-hand-holding-dollar text-emerald-500 mt-0.5"></i>
+                                <span><span class="block text-sm font-semibold text-slate-100">${__('Registrar pago')}</span>
+                                <span class="block text-[11px] text-slate-500">${canPay ? __('Abono sobre el saldo pendiente') : __('El estudiante no tiene saldo pendiente.')}</span></span>
+                            </button>
+                            <button type="button" onclick="closeLedgerMenu(); openPackageModal(${student.db_id})"
+                                class="w-full text-left flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-slate-800">
+                                <i class="fa-solid fa-box-open text-amber-500 mt-0.5"></i>
+                                <span><span class="block text-sm font-semibold text-slate-100">${__('Asignar paquete')}</span>
+                                <span class="block text-[11px] text-slate-500">${student.package_id ? __('Paquete adicional con su factura') : __('Paquete de inscripción')}</span></span>
+                            </button>
+                        </div>
+                    </div>
                     <span class="flex-1"></span>
                     <span class="text-xs text-slate-500">${__('Saldo')}:</span>
                     <span class="text-base font-black ${balance > 0 ? 'text-red-500' : 'text-green-500'}">${money(balance)}</span>

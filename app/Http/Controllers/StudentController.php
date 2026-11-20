@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use App\Models\Package;
 use App\Models\Student;
+use App\Models\StudentCharge;
 use App\Models\StudentLicense;
 use App\Models\StudentPayment;
 use App\Support\ImageUploads;
@@ -28,6 +29,7 @@ class StudentController extends Controller
             },
             'packageModel',
             'notes.user',
+            'charges',
         ])->withSum(['lessons as used_minutes' => fn ($q) => $q->usingPackage()], 'duration_minutes')->get();
 
         // Map database records to the exact structure expected by the JS dashboard
@@ -626,6 +628,54 @@ class StudentController extends Controller
     }
 
     /**
+     * Ledger "+": give the student a package. With no package yet it becomes the enrollment
+     * package; otherwise it is added as an additional package (a charge with its own invoice).
+     */
+    public function storeCharge(Request $request, $id)
+    {
+        $today = now(config('app.school_timezone'))->toDateString();
+        $validated = $request->validate([
+            'package_id' => 'required|integer|exists:packages,id',
+            'charge_date' => 'required|date|before_or_equal:' . $today,
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $package = Package::where('is_active', true)->find($validated['package_id']);
+        if (!$package) {
+            throw ValidationException::withMessages(['package_id' => __('Ese paquete no está activo.')]);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $student = Student::lockForUpdate()->findOrFail($id);
+
+            $charge = null;
+            if ($student->package_id) {
+                $charge = $student->addPackageCharge($package, $validated['charge_date'], $validated['notes'] ?? null);
+            } else {
+                $student->purchasePackage($package);
+            }
+            $student->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'charge' => $charge?->toDashboardArray(),
+                'student' => $student->refresh()->toDashboardArray(),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $this->errorMessage($e)
+            ], 500);
+        }
+    }
+
+    /**
      * Print/Show receipt in HTML for print dialog.
      */
     public function printReceipt($id)
@@ -642,11 +692,62 @@ class StudentController extends Controller
     {
         $student = Student::withTrashed()->findOrFail($id);
         $payments = $student->payments()->orderBy('payment_date')->orderBy('id')->get();
+        $charges = $student->charges()->get();
 
         // Amount paid at enrollment (it has no payment record of its own)
         $initialPayment = max(0, round((float) $student->paid_amount - (float) $payments->sum('amount'), 2));
 
-        return view('invoice', compact('student', 'payments', 'initialPayment'));
+        // Enrollment package (plan_cost / package_lessons include the additional packages) + additional ones
+        $items = [[
+            'date' => $student->created_at?->format('Y-m-d'),
+            'description' => $student->package,
+            'lessons' => max(0, (int) $student->package_lessons - (int) $charges->sum('lessons')),
+            'amount' => max(0, round((float) $student->plan_cost - (float) $charges->sum('amount'), 2)),
+            'has_package' => (bool) $student->package_id,
+        ]];
+        foreach ($charges as $c) {
+            $items[] = [
+                'date' => $c->charge_date?->format('Y-m-d'),
+                'description' => $c->description,
+                'lessons' => (int) $c->lessons,
+                'amount' => (float) $c->amount,
+                'has_package' => true,
+                'number' => $c->number,
+            ];
+        }
+
+        return view('invoice', [
+            'student' => $student,
+            'payments' => $payments,
+            'initialPayment' => $initialPayment,
+            'items' => $items,
+            'number' => 'INV-' . str_pad($student->id, 4, '0', STR_PAD_LEFT),
+            'charge' => null,
+        ]);
+    }
+
+    /**
+     * Invoice of one additional package. It shows that package and the student's current balance.
+     */
+    public function printChargeInvoice($id)
+    {
+        $charge = StudentCharge::findOrFail($id);
+        $student = Student::withTrashed()->findOrFail($charge->student_id);
+
+        return view('invoice', [
+            'student' => $student,
+            'payments' => collect(),
+            'initialPayment' => 0,
+            'items' => [[
+                'date' => $charge->charge_date?->format('Y-m-d'),
+                'description' => $charge->description,
+                'lessons' => (int) $charge->lessons,
+                'amount' => (float) $charge->amount,
+                'has_package' => true,
+            ]],
+            'number' => $charge->number,
+            'charge' => $charge,
+        ]);
     }
 
     /**

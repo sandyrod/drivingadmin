@@ -122,6 +122,14 @@ class Student extends Model
     }
 
     /**
+     * Additional packages bought after enrollment (oldest first).
+     */
+    public function charges()
+    {
+        return $this->hasMany(StudentCharge::class)->orderBy('charge_date')->orderBy('id');
+    }
+
+    /**
      * Internal notes about the student (newest first).
      */
     public function notes()
@@ -153,20 +161,46 @@ class Student extends Model
     /**
      * Snapshot a catalog package onto the student (purchase): name, price and lessons are
      * copied, so later changes to the package only affect new purchases.
-     * Previous payments are kept; the debt is recalculated.
+     * Previous payments and additional packages (charges) are kept; the debt is recalculated.
      */
     public function purchasePackage(Package $package): void
     {
-        $debt = max(0, (float) $package->price - (float) $this->paid_amount);
+        $extraAmount = $this->exists ? (float) $this->charges()->sum('amount') : 0;
+        $extraLessons = $this->exists ? (int) $this->charges()->sum('lessons') : 0;
+        $total = (float) $package->price + $extraAmount;
+        $debt = max(0, $total - (float) $this->paid_amount);
 
         $this->fill([
             'package_id' => $package->id,
             'package' => $package->name,
-            'package_lessons' => $package->lessons,
-            'plan_cost' => $package->price,
+            'package_lessons' => $package->lessons + $extraLessons,
+            'plan_cost' => $total,
             'debt_amount' => $debt,
             'status' => $debt > 0 ? 'active' : 'al_dia',
         ]);
+    }
+
+    /**
+     * Add an additional package (new charge): its price goes to the debt and its lessons
+     * to the lessons available. The caller saves the student.
+     */
+    public function addPackageCharge(Package $package, string $date, ?string $notes = null): StudentCharge
+    {
+        $charge = $this->charges()->create([
+            'package_id' => $package->id,
+            'description' => $package->name,
+            'lessons' => $package->lessons,
+            'amount' => $package->price,
+            'charge_date' => $date,
+            'notes' => $notes,
+        ]);
+
+        $this->plan_cost = (float) $this->plan_cost + (float) $package->price;
+        $this->package_lessons = (int) $this->package_lessons + (int) $package->lessons;
+        $this->debt_amount = max(0, (float) $this->plan_cost - (float) $this->paid_amount);
+        $this->status = $this->debt_amount > 0 ? 'active' : 'al_dia';
+
+        return $charge;
     }
 
     /**
@@ -234,6 +268,8 @@ class Student extends Model
             'is_problematic' => (bool) $this->is_problematic,
             'language' => $this->language ?: config('app.default_language'),
             'notes' => $this->notes->map->toDashboardArray()->values()->all(),
+            // Additional packages (cost and package_lessons above already include them)
+            'charges' => $this->charges->map->toDashboardArray()->values()->all(),
             'license' => $activeLicense ? [
                 'license_number' => $activeLicense->license_number,
                 'expiration_date' => $activeLicense->expiration_date,

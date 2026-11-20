@@ -813,5 +813,18 @@
     "Totales": "Totals",
     "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.": "Click a free slot of any instructor to change the day, time or instructor.",
     "Se mantiene el día, la hora y el instructor actuales.": "The current day, time and instructor are kept.",
-    "cambia de instructor": "instructor changes"
+    "cambia de instructor": "instructor changes",
+    "Registrar un pago a continuación": "Record a payment next",
+    "Asignar y facturar": "Assign and invoice",
+    "Abrir la factura al guardar": "Open the invoice when saving",
+    "Se agrega como paquete adicional, con su propia factura.": "It is added as an additional package, with its own invoice.",
+    "El estudiante no tiene paquete: este será su paquete de inscripción.": "The student has no package: this will be their enrollment package.",
+    "Saldo actual": "Current balance",
+    "Saldo después": "Balance after",
+    "Paquete agregado. Factura :number": "Package added. Invoice :number",
+    "Nuevo movimiento": "New entry",
+    "Abono sobre el saldo pendiente": "Payment on the outstanding balance",
+    "Paquete adicional con su factura": "Additional package with its invoice",
+    "Paquete de inscripción": "Enrollment package",
+    "Saldo de la cuenta:": "Account balance:"
 }

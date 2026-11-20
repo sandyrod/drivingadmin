@@ -1,11 +1,11 @@
 @extends('documents.layout')
 
 @php
-    $number = 'INV-' . str_pad($student->id, 4, '0', STR_PAD_LEFT);
-    $total = (float) $student->plan_cost;
+    // $items: packages billed. Full invoice = enrollment + additional packages; $charge set = one additional package.
+    $total = (float) collect($items)->sum('amount');
     $paid = (float) $student->paid_amount;
-    $balance = max(0, $total - $paid);
-    $lessons = (int) $student->package_lessons;
+    // Balance of the student's whole account (all packages minus all payments)
+    $balance = max(0, (float) $student->plan_cost - $paid);
     $minutes = \App\Models\Lesson::SLOT_MINUTES;
 @endphp
 
@@ -15,7 +15,7 @@
 
 @section('doc_meta')
     <p class="text-xs font-bold mt-2">Nº {{ $number }}</p>
-    <p class="text-[11px] text-white/80 mt-0.5">{{ __('Fecha:') }} {{ now(config('app.school_timezone'))->format('Y-m-d') }}</p>
+    <p class="text-[11px] text-white/80 mt-0.5">{{ __('Fecha:') }} {{ $charge ? $charge->charge_date?->format('Y-m-d') : now(config('app.school_timezone'))->format('Y-m-d') }}</p>
     <p class="text-[11px] text-white/80">{{ __('Inscripción:') }} {{ $student->created_at?->format('Y-m-d') }}</p>
 @endsection
 
@@ -36,7 +36,7 @@
             @if($student->contract_number)
                 <div class="flex justify-between gap-3"><span class="text-slate-500">{{ __('Contrato:') }}</span><span class="font-bold">{{ $student->contract_number }}</span></div>
             @endif
-            <div class="flex justify-between gap-3"><span class="text-slate-500">Balance:</span>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">{{ $charge ? __('Saldo de la cuenta:') : 'Balance:' }}</span>
                 <span class="font-black {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">${{ number_format($balance, 2) }}</span></div>
             <div class="flex justify-between gap-3"><span class="text-slate-500">{{ __('Estado:') }}</span>
                 <span class="font-bold {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $balance > 0 ? __('Pendiente') : __('Pagado') }}</span></div>
@@ -52,20 +52,29 @@
             </tr>
         </thead>
         <tbody>
-            <tr class="border-b border-brand/10">
-                <td class="px-4 py-3">
-                    <p class="font-bold text-slate-800">{{ $student->package ?: __('Sin paquete asignado') }}</p>
-                    @if($student->package_id)
-                        <p class="text-xs text-slate-500">
-                            {{ $lessons > 0 ? ($lessons === 1 ? __('1 clase de manejo de :minutes min', ['minutes' => $minutes]) : __(':n clases de manejo de :minutes min', ['n' => $lessons, 'minutes' => $minutes])) : __('Sin clases de manejo') }}
-                        </p>
-                    @endif
-                </td>
-                <td class="px-4 py-3 text-right font-bold">${{ number_format($total, 2) }}</td>
-            </tr>
+            @foreach($items as $item)
+                <tr class="border-b border-brand/10">
+                    <td class="px-4 py-3">
+                        <p class="font-bold text-slate-800">{{ $item['description'] ?: __('Sin paquete asignado') }}</p>
+                        @if($item['has_package'])
+                            <p class="text-xs text-slate-500">
+                                {{ $item['lessons'] > 0 ? ($item['lessons'] === 1 ? __('1 clase de manejo de :minutes min', ['minutes' => $minutes]) : __(':n clases de manejo de :minutes min', ['n' => $item['lessons'], 'minutes' => $minutes])) : __('Sin clases de manejo') }}
+                                @if(count($items) > 1)
+                                    · {{ $item['date'] }}@if(!empty($item['number'])) · {{ $item['number'] }}@endif
+                                @endif
+                            </p>
+                        @endif
+                        @if($charge && $charge->notes)
+                            <p class="text-xs text-slate-500 mt-0.5">{{ $charge->notes }}</p>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold">${{ number_format($item['amount'], 2) }}</td>
+                </tr>
+            @endforeach
         </tbody>
     </table>
 
+    @if(!$charge)
     <!-- Payments -->
     <h4 class="text-[10px] font-black uppercase tracking-wider text-brand mb-2">Payments</h4>
     <table class="w-full text-sm mb-6">
@@ -108,6 +117,16 @@
             <span class="text-xl font-black {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">${{ number_format($balance, 2) }} USD</span>
         </div>
     </div>
+    @else
+    <!-- Additional package: its total and the account balance -->
+    <div class="ml-auto w-full sm:w-72 space-y-1.5 text-sm">
+        <div class="flex justify-between"><span class="text-slate-500">Total:</span><span class="font-bold">${{ number_format($total, 2) }}</span></div>
+        <div class="flex justify-between items-center border-t-2 border-brand pt-2 mt-2">
+            <span class="font-black text-brand uppercase tracking-wider">{{ __('Saldo de la cuenta:') }}</span>
+            <span class="text-xl font-black {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">${{ number_format($balance, 2) }} USD</span>
+        </div>
+    </div>
+    @endif
 @endsection
 
 @section('footer_note', __('Invoice generado con los datos actuales del alumno y sus pagos registrados.'))

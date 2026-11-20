@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::put('/students/{id}', [StudentController::class, 'update'])->name('students.update');
     Route::put('/students/{id}/package', [StudentController::class, 'assignPackage'])->name('students.package');
+    Route::post('/students/{id}/charges', [StudentController::class, 'storeCharge'])->name('students.charges.store');
+    Route::get('/charges/{id}/invoice', [StudentController::class, 'printChargeInvoice'])->name('charges.invoice');
     Route::get('/students/{id}/invoice', [StudentController::class, 'printInvoice'])->name('students.invoice');
     Route::post('/students/{id}/notes', [StudentController::class, 'storeNote'])->name('students.notes.store');
     Route::delete('/students/{id}/notes/{noteId}', [StudentController::class, 'destroyNote'])->name('students.notes.destroy');

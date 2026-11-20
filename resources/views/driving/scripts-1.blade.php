@@ -310,6 +310,9 @@
 
             const active = packages.filter(p => p.is_active);
             if (currentPlan && !active.some(p => p.name === currentPlan)) {
+                // currentCost includes the additional packages: the option shows the enrollment package price only
+                const extras = (getEditingStudent()?.charges || []).reduce((sum, c) => sum + c.amount, 0);
+                currentCost = Math.max(0, Math.round((currentCost - extras) * 100) / 100);
                 const opt = document.createElement('option');
                 opt.value = currentPlan;
                 opt.dataset.price = currentCost;
@@ -337,8 +340,10 @@
             const planSelector = document.getElementById('stu-plan');
             const selectedOption = planSelector.options[planSelector.selectedIndex];
             const price = parseFloat(selectedOption?.getAttribute('data-price')) || 0;
+            // The total also includes the student's additional packages (Ledger)
+            const extras = (getEditingStudent()?.charges || []).reduce((sum, c) => sum + c.amount, 0);
 
-            document.getElementById('stu-cost').value = price;
+            document.getElementById('stu-cost').value = Math.round((price + extras) * 100) / 100;
             calculateInscripcionDebt();
         }
 

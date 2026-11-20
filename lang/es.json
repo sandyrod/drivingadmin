@@ -813,5 +813,18 @@
     "Totales": "Totales",
     "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.": "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.",
     "Se mantiene el día, la hora y el instructor actuales.": "Se mantiene el día, la hora y el instructor actuales.",
-    "cambia de instructor": "cambia de instructor"
+    "cambia de instructor": "cambia de instructor",
+    "Registrar un pago a continuación": "Registrar un pago a continuación",
+    "Asignar y facturar": "Asignar y facturar",
+    "Abrir la factura al guardar": "Abrir la factura al guardar",
+    "Se agrega como paquete adicional, con su propia factura.": "Se agrega como paquete adicional, con su propia factura.",
+    "El estudiante no tiene paquete: este será su paquete de inscripción.": "El estudiante no tiene paquete: este será su paquete de inscripción.",
+    "Saldo actual": "Saldo actual",
+    "Saldo después": "Saldo después",
+    "Paquete agregado. Factura :number": "Paquete agregado. Factura :number",
+    "Nuevo movimiento": "Nuevo movimiento",
+    "Abono sobre el saldo pendiente": "Abono sobre el saldo pendiente",
+    "Paquete adicional con su factura": "Paquete adicional con su factura",
+    "Paquete de inscripción": "Paquete de inscripción",
+    "Saldo de la cuenta:": "Saldo de la cuenta:"
 }
