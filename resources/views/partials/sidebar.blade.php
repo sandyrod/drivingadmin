@@ -155,7 +155,9 @@
 
     <!-- Footer Information -->
     <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
-        <p>{{ __('Demo Técnico - Fase 1') }}</p>
+        <a href="https://santiscodes.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 hover:text-slate-300 transition">
+            <img src="{{ asset('images/santiscodes-logo.png') }}" alt="" class="w-4 h-4 object-contain"> santiscodes.com
+        </a>
         <p class="text-amber-500/60 mt-1">{{ __('Ecosistema Google Activo') }}</p>
     </div>
 </aside>
