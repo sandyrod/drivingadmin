@@ -10,7 +10,7 @@ abstract class Controller
      * else is logged and replaced by a generic message so no SQL / internal
      * details leak to the browser.
      */
-    protected function errorMessage(\Throwable $e, string $fallback = 'Ocurrió un error en el servidor. Intenta de nuevo.'): string
+    protected function errorMessage(\Throwable $e, ?string $fallback = null): string
     {
         if ($e instanceof \InvalidArgumentException) {
             return $e->getMessage();
@@ -18,6 +18,6 @@ abstract class Controller
 
         report($e);
 
-        return $fallback;
+        return $fallback ?? __('Ocurrió un error en el servidor. Intenta de nuevo.');
     }
 }

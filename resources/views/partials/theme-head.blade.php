@@ -122,6 +122,8 @@
         html.theme-light .theme-toggle .icon-moon { display: none; }
     </style>
 
+    @include('partials.i18n')
+
     <script>
         function toggleTheme() {
             const root = document.documentElement;

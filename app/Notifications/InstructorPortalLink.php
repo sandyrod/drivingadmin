@@ -32,16 +32,16 @@ class InstructorPortalLink extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Tu enlace "Mis clases" - ' . config('app.school_name'))
-            ->greeting('Hola ' . trim($this->instructor->first_name . ' ' . $this->instructor->last_name) . ',')
-            ->line('Este es tu enlace personal para ver tus clases y marcarlas como **completadas** (o "no asistió") al terminar.')
-            ->action('Abrir Mis clases', $this->url)
-            ->line('Guárdalo en tu teléfono (por ejemplo, agrégalo a la pantalla de inicio). No lo compartas: cualquiera con el enlace puede marcar tus clases.')
+            ->subject(__('Tu enlace "Mis clases" - :school', ['school' => config('app.school_name')]))
+            ->greeting(__('Hola :name,', ['name' => trim($this->instructor->first_name . ' ' . $this->instructor->last_name)]))
+            ->line(__('Este es tu enlace personal para ver tus clases y marcarlas como **completadas** (o "no asistió") al terminar.'))
+            ->action(__('Abrir Mis clases'), $this->url)
+            ->line(__('Guárdalo en tu teléfono (por ejemplo, agrégalo a la pantalla de inicio). No lo compartas: cualquiera con el enlace puede marcar tus clases.'))
             ->salutation(config('app.name'));
     }
 
     public function toSms(object $notifiable): string
     {
-        return config('app.school_name') . ': tu enlace para ver y marcar tus clases: ' . $this->url;
+        return __(':school: tu enlace para ver y marcar tus clases: :url', ['school' => config('app.school_name'), 'url' => $this->url]);
     }
 }

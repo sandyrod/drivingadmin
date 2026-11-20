@@ -50,12 +50,12 @@ class LessonNotifier
             return;
         }
 
-        $who = $role === 'instructor' ? 'instructor' : 'estudiante';
+        $who = $role === 'instructor' ? __('instructor') : __('estudiante');
         $email = filter_var($person->email, FILTER_VALIDATE_EMAIL) ?: null;
         $phone = SmsChannel::isConfigured() ? SmsChannel::normalize($person->phone) : null;
 
         if (!$email && !$phone) {
-            $result['failed'][] = "{$who} (sin correo ni teléfono válido)";
+            $result['failed'][] = __(':who (sin correo ni teléfono válido)', ['who' => $who]);
             return;
         }
 
@@ -65,8 +65,9 @@ class LessonNotifier
         }
 
         try {
-            $route->notifyNow(new LessonNotification($lesson, $event, $role));
-            $result['sent'][] = $who . ' (' . implode(' + ', array_filter([$email ? 'correo' : null, $phone ? 'SMS' : null])) . ')';
+            // Each person gets the message in their preferred language
+            $route->notifyNow((new LessonNotification($lesson, $event, $role))->locale($person->language ?: config('app.default_language')));
+            $result['sent'][] = $who . ' (' . implode(' + ', array_filter([$email ? __('correo') : null, $phone ? 'SMS' : null])) . ')';
         } catch (\Throwable $e) {
             Log::error("Lesson {$lesson->id}: could not notify {$role} ({$event}): " . $e->getMessage());
             $result['failed'][] = $who;

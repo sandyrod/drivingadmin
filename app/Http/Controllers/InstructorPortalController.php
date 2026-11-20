@@ -58,6 +58,7 @@ class InstructorPortalController extends Controller
                             foreach (self::SEARCH_COLUMNS as $column) {
                                 $w->orWhere($column, 'like', '%' . $word . '%');
                             }
+                            $w->orWhereHas('activeLicense', fn ($l) => $l->where('license_number', 'like', '%' . $word . '%'));
                         });
                     });
                 }
@@ -115,17 +116,17 @@ class InstructorPortalController extends Controller
         $now = Carbon::now(config('app.school_timezone'))->format('Y-m-d H:i:s');
 
         if ($lesson->status !== Lesson::STATUS_SCHEDULED) {
-            return back()->with('error', 'Esa clase ya estaba marcada.');
+            return back()->with('error', __('Esa clase ya estaba marcada.'));
         }
         if ($lesson->starts_at->format('Y-m-d H:i:s') > $now) {
-            return back()->with('error', 'Solo puedes marcar una clase cuando ya empezó.');
+            return back()->with('error', __('Solo puedes marcar una clase cuando ya empezó.'));
         }
 
         $lesson->update(['status' => $validated['status']]);
 
         $student = trim(($lesson->student?->first_name ?? '') . ' ' . ($lesson->student?->last_name ?? ''));
 
-        return back()->with('ok', ($validated['status'] === Lesson::STATUS_COMPLETED ? 'Clase completada' : 'Marcada como "no asistió"')
+        return back()->with('ok', ($validated['status'] === Lesson::STATUS_COMPLETED ? __('Clase completada') : __('Marcada como "no asistió"'))
             . ($student ? ': ' . $student : '') . '.');
     }
 
@@ -135,7 +136,14 @@ class InstructorPortalController extends Controller
 
         $instructor = Instructor::where('portal_token', $token)->first();
         abort_unless($instructor, 404);
-        abort_if($instructor->status === 'Suspendido', 403, 'Tu acceso está suspendido. Comunícate con la academia.');
+        // Without a language picked on this device, the page uses the instructor's preferred one
+        if (!\App\Http\Middleware\SetLocale::chosen(request())) {
+            $locale = $instructor->language ?: config('app.default_language');
+            app()->setLocale($locale);
+            Carbon::setLocale($locale);
+        }
+
+        abort_if($instructor->status === 'Suspendido', 403, __('Tu acceso está suspendido. Comunícate con la academia.'));
 
         return $instructor;
     }

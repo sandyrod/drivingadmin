@@ -37,13 +37,13 @@ class LessonCalendar
     {
         if ($lesson->isRoadTest()) {
             return $role === 'instructor'
-                ? 'ROAD TEST con ' . self::studentName($lesson)
-                : 'ROAD TEST (examen de manejo) - ' . config('app.name');
+                ? __('ROAD TEST con :name', ['name' => self::studentName($lesson)])
+                : __('ROAD TEST (examen de manejo) - :school', ['school' => config('app.name')]);
         }
 
         return $role === 'instructor'
-            ? 'Clase de manejo con ' . self::studentName($lesson)
-            : 'Clase de manejo - ' . config('app.name');
+            ? __('Clase de manejo con :name', ['name' => self::studentName($lesson)])
+            : __('Clase de manejo - :school', ['school' => config('app.name')]);
     }
 
     /** Event location: the road test site, or the school address. */
@@ -59,22 +59,22 @@ class LessonCalendar
     {
         $lines = [
             $role === 'instructor'
-                ? 'Estudiante: ' . self::studentName($lesson) . ($lesson->student?->phone ? ' (' . $lesson->student->phone . ')' : '')
-                : 'Instructor: ' . self::instructorName($lesson) . ($lesson->instructor?->phone ? ' (' . $lesson->instructor->phone . ')' : ''),
-            'Duración: ' . $lesson->duration_minutes . ' min',
+                ? __('Estudiante') . ': ' . self::studentName($lesson) . ($lesson->student?->phone ? ' (' . $lesson->student->phone . ')' : '')
+                : __('Instructor') . ': ' . self::instructorName($lesson) . ($lesson->instructor?->phone ? ' (' . $lesson->instructor->phone . ')' : ''),
+            __('Duración') . ': ' . $lesson->duration_minutes . ' min',
         ];
 
         if ($lesson->vehicle) {
-            $lines[] = 'Vehículo: ' . $lesson->vehicle->brand . ' [' . $lesson->vehicle->plate . ']';
+            $lines[] = __('Vehículo') . ': ' . $lesson->vehicle->brand . ' [' . $lesson->vehicle->plate . ']';
         }
         if ($lesson->notes) {
-            $lines[] = 'Notas: ' . $lesson->notes;
+            $lines[] = __('Notas') . ': ' . $lesson->notes;
         }
         if ($mapLinks && $lesson->isRoadTest() && $lesson->location) {
             $lines[] = 'Google Maps: ' . Lesson::googleMapsUrl($lesson->location);
             $lines[] = 'Apple Maps: ' . Lesson::appleMapsUrl($lesson->location);
         }
-        $lines[] = 'Referencia: CLS-' . str_pad($lesson->id, 4, '0', STR_PAD_LEFT);
+        $lines[] = __('Referencia') . ': CLS-' . str_pad($lesson->id, 4, '0', STR_PAD_LEFT);
 
         return implode("\n", $lines);
     }
@@ -95,7 +95,7 @@ class LessonCalendar
             'DTSTAMP:' . now()->utc()->format('Ymd\THis\Z'),
             'DTSTART:' . self::start($lesson)->utc()->format('Ymd\THis\Z'),
             'DTEND:' . self::end($lesson)->utc()->format('Ymd\THis\Z'),
-            'SUMMARY:' . self::escape(($cancel ? 'CANCELADA: ' : '') . self::title($lesson, $role)),
+            'SUMMARY:' . self::escape(($cancel ? __('CANCELADA') . ': ' : '') . self::title($lesson, $role)),
             'DESCRIPTION:' . self::escape(self::description($lesson, $role)),
         ];
 
@@ -146,12 +146,12 @@ class LessonCalendar
 
     public static function studentName(Lesson $lesson): string
     {
-        return $lesson->student ? trim($lesson->student->first_name . ' ' . $lesson->student->last_name) : 'Estudiante';
+        return $lesson->student ? trim($lesson->student->first_name . ' ' . $lesson->student->last_name) : __('Estudiante');
     }
 
     public static function instructorName(Lesson $lesson): string
     {
-        return $lesson->instructor ? trim($lesson->instructor->first_name . ' ' . $lesson->instructor->last_name) : 'Instructor';
+        return $lesson->instructor ? trim($lesson->instructor->first_name . ' ' . $lesson->instructor->last_name) : __('Instructor');
     }
 
     /** Escape a TEXT value (RFC 5545 §3.3.11). */

@@ -15,8 +15,8 @@
 
 @section('doc_meta')
     <p class="text-xs font-bold mt-2">Nº {{ $number }}</p>
-    <p class="text-[11px] text-white/80 mt-0.5">Fecha: {{ now(config('app.school_timezone'))->format('Y-m-d') }}</p>
-    <p class="text-[11px] text-white/80">Inscripción: {{ $student->created_at?->format('Y-m-d') }}</p>
+    <p class="text-[11px] text-white/80 mt-0.5">{{ __('Fecha:') }} {{ now(config('app.school_timezone'))->format('Y-m-d') }}</p>
+    <p class="text-[11px] text-white/80">{{ __('Inscripción:') }} {{ $student->created_at?->format('Y-m-d') }}</p>
 @endsection
 
 @section('content')
@@ -32,14 +32,14 @@
             @if($student->email)<p class="text-xs text-slate-500 mt-0.5">Email: {{ $student->email }}</p>@endif
         </div>
         <div class="rounded-xl p-5 border border-brand/10 text-sm space-y-1.5">
-            <div class="flex justify-between gap-3"><span class="text-slate-500">ID Alumno:</span><span class="font-bold">EST-{{ str_pad($student->id, 3, '0', STR_PAD_LEFT) }}</span></div>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">{{ __('ID Alumno:') }}</span><span class="font-bold">EST-{{ str_pad($student->id, 3, '0', STR_PAD_LEFT) }}</span></div>
             @if($student->contract_number)
-                <div class="flex justify-between gap-3"><span class="text-slate-500">Contrato:</span><span class="font-bold">{{ $student->contract_number }}</span></div>
+                <div class="flex justify-between gap-3"><span class="text-slate-500">{{ __('Contrato:') }}</span><span class="font-bold">{{ $student->contract_number }}</span></div>
             @endif
             <div class="flex justify-between gap-3"><span class="text-slate-500">Balance:</span>
                 <span class="font-black {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">${{ number_format($balance, 2) }}</span></div>
-            <div class="flex justify-between gap-3"><span class="text-slate-500">Estado:</span>
-                <span class="font-bold {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $balance > 0 ? 'Pendiente' : 'Pagado' }}</span></div>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">{{ __('Estado:') }}</span>
+                <span class="font-bold {{ $balance > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $balance > 0 ? __('Pendiente') : __('Pagado') }}</span></div>
         </div>
     </div>
 
@@ -54,10 +54,10 @@
         <tbody>
             <tr class="border-b border-brand/10">
                 <td class="px-4 py-3">
-                    <p class="font-bold text-slate-800">{{ $student->package ?: 'Sin paquete asignado' }}</p>
+                    <p class="font-bold text-slate-800">{{ $student->package ?: __('Sin paquete asignado') }}</p>
                     @if($student->package_id)
                         <p class="text-xs text-slate-500">
-                            {{ $lessons > 0 ? $lessons . ' ' . ($lessons === 1 ? 'clase' : 'clases') . ' de manejo de ' . $minutes . ' min' : 'Sin clases de manejo' }}
+                            {{ $lessons > 0 ? ($lessons === 1 ? __('1 clase de manejo de :minutes min', ['minutes' => $minutes]) : __(':n clases de manejo de :minutes min', ['n' => $lessons, 'minutes' => $minutes])) : __('Sin clases de manejo') }}
                         </p>
                     @endif
                 </td>
@@ -71,9 +71,9 @@
     <table class="w-full text-sm mb-6">
         <thead>
             <tr class="bg-brand-light text-brand text-[11px] uppercase tracking-wider">
-                <th class="text-left px-4 py-2">Fecha</th>
-                <th class="text-left px-4 py-2">Recibo</th>
-                <th class="text-left px-4 py-2">Método</th>
+                <th class="text-left px-4 py-2">{{ __('Fecha') }}</th>
+                <th class="text-left px-4 py-2">{{ __('Recibo') }}</th>
+                <th class="text-left px-4 py-2">{{ __('Método') }}</th>
                 <th class="text-right px-4 py-2">Payment</th>
             </tr>
         </thead>
@@ -81,7 +81,7 @@
             @if($initialPayment > 0)
                 <tr class="border-b border-slate-100">
                     <td class="px-4 py-2 text-slate-500">{{ $student->created_at?->format('Y-m-d') }}</td>
-                    <td class="px-4 py-2 text-slate-500" colspan="2">Pago inicial (inscripción)</td>
+                    <td class="px-4 py-2 text-slate-500" colspan="2">{{ __('Pago inicial (inscripción)') }}</td>
                     <td class="px-4 py-2 text-right font-semibold">${{ number_format($initialPayment, 2) }}</td>
                 </tr>
             @endif
@@ -89,12 +89,12 @@
                 <tr class="border-b border-slate-100">
                     <td class="px-4 py-2 text-slate-500">{{ date('Y-m-d', strtotime($p->payment_date)) }}</td>
                     <td class="px-4 py-2 text-slate-500">ABO-{{ str_pad($p->id, 4, '0', STR_PAD_LEFT) }}</td>
-                    <td class="px-4 py-2 text-slate-500">{{ \App\Models\StudentPayment::METHOD_LABELS[$p->payment_method] ?? $p->payment_method }}</td>
+                    <td class="px-4 py-2 text-slate-500">{{ __(\App\Models\StudentPayment::METHOD_LABELS[$p->payment_method] ?? $p->payment_method) }}</td>
                     <td class="px-4 py-2 text-right font-semibold">${{ number_format($p->amount, 2) }}</td>
                 </tr>
             @endforeach
             @if($initialPayment <= 0 && $payments->isEmpty())
-                <tr><td colspan="4" class="px-4 py-3 text-center text-slate-400 text-xs">Sin pagos registrados</td></tr>
+                <tr><td colspan="4" class="px-4 py-3 text-center text-slate-400 text-xs">{{ __('Sin pagos registrados') }}</td></tr>
             @endif
         </tbody>
     </table>
@@ -110,4 +110,4 @@
     </div>
 @endsection
 
-@section('footer_note', 'Invoice generado con los datos actuales del alumno y sus pagos registrados.')
+@section('footer_note', __('Invoice generado con los datos actuales del alumno y sus pagos registrados.'))

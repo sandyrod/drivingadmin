@@ -56,6 +56,7 @@ class Student extends Model
         'pickup_location',
         'preferred_instructor_id',
         'is_problematic',
+        'language',
     ];
 
     /**
@@ -78,6 +79,7 @@ class Student extends Model
         'pickup_location' => 'nullable|string|max:255',
         'preferred_instructor_id' => 'nullable|integer|exists:instructors,id',
         'is_problematic' => 'boolean',
+        'language' => 'nullable|in:es,en',
     ];
 
     /**
@@ -90,6 +92,7 @@ class Student extends Model
             $data[$key] = $validated[$key] ?? null;
         }
         $data['is_problematic'] = (bool) ($validated['is_problematic'] ?? false);
+        $data['language'] = $validated['language'] ?? config('app.default_language');
 
         return $data;
     }
@@ -229,6 +232,7 @@ class Student extends Model
             'pickup_location' => $this->pickup_location,
             'preferred_instructor_id' => $this->preferred_instructor_id,
             'is_problematic' => (bool) $this->is_problematic,
+            'language' => $this->language ?: config('app.default_language'),
             'notes' => $this->notes->map->toDashboardArray()->values()->all(),
             'license' => $activeLicense ? [
                 'license_number' => $activeLicense->license_number,

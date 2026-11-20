@@ -118,7 +118,7 @@ class ReviewController extends Controller
         return [
             'id' => 'REV-' . str_pad($r->id, 3, '0', STR_PAD_LEFT),
             'db_id' => $r->id,
-            'instructor' => $r->instructorModel ? ($r->instructorModel->first_name . ' ' . $r->instructorModel->last_name) : 'Instructor Eliminado',
+            'instructor' => $r->instructorModel ? ($r->instructorModel->first_name . ' ' . $r->instructorModel->last_name) : __('Instructor Eliminado'),
             'instructor_id' => $r->instructor_id,
             'author_name' => $r->author_name,
             'rating' => (int) $r->rating,

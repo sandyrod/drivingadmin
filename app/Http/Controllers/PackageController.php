@@ -44,7 +44,7 @@ class PackageController extends Controller
         if ($validated['is_active'] && (float) $package->price <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Asigna un precio al paquete antes de activarlo.',
+                'message' => __('Asigna un precio al paquete antes de activarlo.'),
             ], 422);
         }
 
@@ -63,7 +63,7 @@ class PackageController extends Controller
         if ($package->students_count > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'No se puede eliminar: ' . $package->students_count . ' estudiante(s) compraron este paquete. Desactívalo para que no se pueda vender.',
+                'message' => __('No se puede eliminar: :count estudiante(s) compraron este paquete. Desactívalo para que no se pueda vender.', ['count' => $package->students_count]),
             ], 422);
         }
 
@@ -81,12 +81,12 @@ class PackageController extends Controller
             'price' => 'required|numeric|min:0|max:99999.99',
             'is_active' => 'required|boolean',
         ], [
-            'name.unique' => 'Ya existe un paquete con ese nombre.',
+            'name.unique' => __('Ya existe un paquete con ese nombre.'),
         ]);
 
         if ($validated['is_active'] && (float) $validated['price'] <= 0) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'price' => 'Un paquete activo debe tener un precio mayor a $0.',
+                'price' => __('Un paquete activo debe tener un precio mayor a $0.'),
             ]);
         }
 

@@ -4,7 +4,7 @@
     $schoolAddress = config('app.school_address') ?: '123 Main St, Queens, NY 11101';
 @endphp
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,7 +52,7 @@
             @yield('content')
 
             <div class="text-center border-t border-brand/15 pt-5 mt-8">
-                <p class="text-xs text-brand font-semibold">¡Gracias por entrenar con nosotros!</p>
+                <p class="text-xs text-brand font-semibold">{{ __('¡Gracias por entrenar con nosotros!') }}</p>
                 <p class="text-[10px] text-slate-400 mt-1">@yield('footer_note')</p>
             </div>
         </div>
@@ -61,11 +61,11 @@
     <!-- Buttons (screen only) -->
     <div class="no-print mt-6 flex justify-center gap-3 flex-wrap">
         <button onclick="window.print()" class="bg-brand hover:bg-brand-dark text-white font-bold px-6 py-2.5 rounded-xl text-sm transition shadow-lg">
-            Imprimir / Guardar PDF
+            {{ __('Imprimir / Guardar PDF') }}
         </button>
         @yield('extra_buttons')
         <button onclick="window.close()" class="bg-white border border-brand/30 text-brand hover:bg-brand-light font-semibold px-6 py-2.5 rounded-xl text-sm transition">
-            Cerrar
+            {{ __('Cerrar') }}
         </button>
     </div>
 

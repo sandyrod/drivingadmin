@@ -16,6 +16,7 @@ class Instructor extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'language',
         'first_name',
         'middle_name',
         'last_name',
@@ -91,7 +92,7 @@ class Instructor extends Model
     public function scheduleText(): string
     {
         if (!$this->hasSchedule()) {
-            return $this->shift ?: 'Sin horario definido';
+            return $this->shift ?: __('Sin horario definido');
         }
 
         $days = $this->workDays();
@@ -108,10 +109,10 @@ class Instructor extends Model
             }
         }
         $text = implode(', ', array_map(fn ($g) => count($g) > 2
-            ? self::DAY_NAMES[$g[0]] . '–' . self::DAY_NAMES[end($g)]
-            : implode(', ', array_map(fn ($d) => self::DAY_NAMES[$d], $g)), $groups));
+            ? __(self::DAY_NAMES[$g[0]]) . '–' . __(self::DAY_NAMES[end($g)])
+            : implode(', ', array_map(fn ($d) => __(self::DAY_NAMES[$d]), $g)), $groups));
 
-        return ($days === [1, 2, 3, 4, 5, 6, 7] ? 'Todos los días' : $text) . ' · ' . $this->workStart() . '–' . $this->workEnd();
+        return ($days === [1, 2, 3, 4, 5, 6, 7] ? __('Todos los días') : $text) . ' · ' . $this->workStart() . '–' . $this->workEnd();
     }
 
     /** Schedule fields for the dashboard JSON. */

@@ -49,7 +49,7 @@ class LessonController extends Controller
         $validated = $request->validate($this->slotRules($type));
 
         if ($lesson->status !== Lesson::STATUS_SCHEDULED) {
-            return $this->fail('Solo se pueden reprogramar clases que estén programadas.');
+            return $this->fail(__('Solo se pueden reprogramar clases que estén programadas.'));
         }
 
         return $this->saveLesson($validated, $lesson->student_id, $type, $lesson);
@@ -84,7 +84,7 @@ class LessonController extends Controller
 
         $nowAtSchool = Carbon::now(config('app.school_timezone'))->format('Y-m-d H:i');
         if ($start->format('Y-m-d H:i') < $nowAtSchool) {
-            return $this->fail('No se puede agendar una clase en una fecha u hora que ya pasó.');
+            return $this->fail(__('No se puede agendar una clase en una fecha u hora que ya pasó.'));
         }
 
         try {
@@ -99,7 +99,7 @@ class LessonController extends Controller
                 $lesson = Lesson::lockForUpdate()->findOrFail($lesson->id);
                 if ($lesson->status !== Lesson::STATUS_SCHEDULED) {
                     DB::rollBack();
-                    return $this->fail('Solo se pueden reprogramar clases que estén programadas.');
+                    return $this->fail(__('Solo se pueden reprogramar clases que estén programadas.'));
                 }
             }
 
@@ -188,8 +188,10 @@ class LessonController extends Controller
     private function checkBookingRules(Student $student, Instructor $instructor, string $type, Carbon $start, Carbon $end, int $minutes, ?Lesson $ignore): ?string
     {
         if (!$instructor->worksDuring($start, $end)) {
-            return 'Ese horario está fuera del horario de trabajo de ' . trim($instructor->first_name . ' ' . $instructor->last_name)
-                . ' (' . $instructor->scheduleText() . ').';
+            return __('Ese horario está fuera del horario de trabajo de :name (:schedule).', [
+                'name' => trim($instructor->first_name . ' ' . $instructor->last_name),
+                'schedule' => $instructor->scheduleText(),
+            ]);
         }
 
         $roadTest = $type === Lesson::TYPE_ROAD_TEST;
@@ -206,11 +208,11 @@ class LessonController extends Controller
             ->when($ignore, fn ($q) => $q->where('id', '!=', $ignore->id));
 
         if ($others($startStr, $endStr)->where('instructor_id', $instructor->id)->exists()) {
-            return 'El instructor ya tiene una clase en ese horario.';
+            return __('El instructor ya tiene una clase en ese horario.');
         }
 
         if ($others($startStr, $endStr)->where('student_id', $student->id)->exists()) {
-            return 'El estudiante ya tiene una clase en ese horario.';
+            return __('El estudiante ya tiene una clase en ese horario.');
         }
 
         // Free time around road tests: nothing can be closer than the gap to a road test
@@ -219,14 +221,14 @@ class LessonController extends Controller
         $gapTo = $end->copy()->addMinutes($gap)->format('Y-m-d H:i:s');
         $tooClose = fn () => $others($gapFrom, $gapTo)
             ->when(!$roadTest, fn ($q) => $q->where('type', Lesson::TYPE_ROAD_TEST));
-        $gapText = $gap % 60 === 0 ? ($gap === 60 ? '1 hora' : ($gap / 60) . ' horas') : "{$gap} minutos";
+        $gapText = $gap % 60 === 0 ? ($gap === 60 ? __('1 hora') : __(':n horas', ['n' => $gap / 60])) : __(':n minutos', ['n' => $gap]);
 
         if ($tooClose()->where('instructor_id', $instructor->id)->exists()) {
-            return "El instructor necesita al menos {$gapText} libre entre un Road Test y otra clase.";
+            return __('El instructor necesita al menos :gap libre entre un Road Test y otra clase.', ['gap' => $gapText]);
         }
 
         if ($tooClose()->where('student_id', $student->id)->exists()) {
-            return "El estudiante necesita al menos {$gapText} libre entre un Road Test y otra clase.";
+            return __('El estudiante necesita al menos :gap libre entre un Road Test y otra clase.', ['gap' => $gapText]);
         }
 
         return null;
@@ -236,13 +238,13 @@ class LessonController extends Controller
     private function checkPackage(Student $student, int $minutes, ?Lesson $ignore): ?string
     {
         if (!$student->package_id) {
-            return 'El estudiante no tiene un paquete asignado. Asígnale uno antes de agendar clases.';
+            return __('El estudiante no tiene un paquete asignado. Asígnale uno antes de agendar clases.');
         }
 
         // Lessons bought are taken from the student's purchase, not from the current catalog
         $lessonsBought = (int) $student->package_lessons;
         if ($lessonsBought === 0) {
-            return 'El paquete del estudiante (' . $student->package . ') no incluye clases de manejo.';
+            return __('El paquete del estudiante (:package) no incluye clases de manejo.', ['package' => $student->package]);
         }
 
         $used = $student->usedLessonMinutes() - ($ignore ? (int) $ignore->duration_minutes : 0);
@@ -250,8 +252,8 @@ class LessonController extends Controller
 
         if ($minutes > $remaining) {
             return $remaining > 0
-                ? 'La clase excede las clases disponibles del paquete. ' . self::lessonsLeftText($remaining) . '.'
-                : 'El estudiante ya usó todas las clases de su paquete.';
+                ? __('La clase excede las clases disponibles del paquete. :left.', ['left' => self::lessonsLeftText($remaining)])
+                : __('El estudiante ya usó todas las clases de su paquete.');
         }
 
         return null;
@@ -270,7 +272,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($id);
 
         if ($lesson->status !== Lesson::STATUS_SCHEDULED) {
-            return $this->fail('Solo se pueden modificar clases que estén programadas.');
+            return $this->fail(__('Solo se pueden modificar clases que estén programadas.'));
         }
 
         try {
@@ -306,7 +308,7 @@ class LessonController extends Controller
         $lessons = intdiv($minutes, Lesson::SLOT_MINUTES);
 
         return $lessons === 1
-            ? 'Queda 1 clase de ' . Lesson::SLOT_MINUTES . ' min'
-            : "Quedan {$lessons} clases de " . Lesson::SLOT_MINUTES . ' min';
+            ? __('Queda 1 clase de :minutes min', ['minutes' => Lesson::SLOT_MINUTES])
+            : __('Quedan :n clases de :minutes min', ['n' => $lessons, 'minutes' => Lesson::SLOT_MINUTES]);
     }
 }

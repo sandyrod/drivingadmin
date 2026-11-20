@@ -32,7 +32,7 @@ class LoginController extends Controller
             $seconds = RateLimiter::availableIn($throttleKey);
 
             throw ValidationException::withMessages([
-                'email' => "Demasiados intentos fallidos. Intenta de nuevo en {$seconds} segundos.",
+                'email' => __('Demasiados intentos fallidos. Intenta de nuevo en :seconds segundos.', ['seconds' => $seconds]),
             ]);
         }
 
@@ -40,7 +40,7 @@ class LoginController extends Controller
             RateLimiter::hit($throttleKey, 60);
 
             throw ValidationException::withMessages([
-                'email' => 'Las credenciales no son correctas.',
+                'email' => __('Las credenciales no son correctas.'),
             ]);
         }
 

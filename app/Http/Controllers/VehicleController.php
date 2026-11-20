@@ -100,7 +100,7 @@ class VehicleController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Vehículo eliminado con éxito.'
+                'message' => __('Vehículo eliminado con éxito.')
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -59,10 +59,11 @@ class StudentController extends Controller
                 'zip_code' => $ins->zip_code,
                 'phone' => $ins->phone,
                 'email' => $ins->email,
-                'vehicle' => $ins->vehicleModel ? $ins->vehicleModel->brand : 'Sin Asignar',
+                'vehicle' => $ins->vehicleModel ? $ins->vehicleModel->brand : __('Sin Asignar'),
                 'plate' => $ins->vehicleModel ? $ins->vehicleModel->plate : '-',
                 'vehicle_id' => $ins->vehicle_id,
                 'transmission' => $ins->transmission ?? 'Automático',
+                'language' => $ins->language ?: config('app.default_language'),
                 ...$ins->scheduleArray(),
                 'status' => $ins->status ?? 'Disponible',
                 'height' => $ins->height,
@@ -104,7 +105,7 @@ class StudentController extends Controller
                 'id' => 'ABO-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
                 'db_id' => $p->id,
                 'student_id' => $p->student_id,
-                'student_name' => $p->student ? ($p->student->first_name . ' ' . $p->student->last_name) : 'Estudiante Eliminado',
+                'student_name' => $p->student ? ($p->student->first_name . ' ' . $p->student->last_name) : __('Estudiante Eliminado'),
                 'amount' => (float) $p->amount,
                 'payment_method' => $p->payment_method,
                 'payment_date' => date('Y-m-d', strtotime($p->payment_date)),
@@ -132,6 +133,7 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizePermit($request);
         $validated = $request->validate([
             // Student details
             'first_name' => 'required|string|max:100',
@@ -159,14 +161,14 @@ class StudentController extends Controller
             'paid_amount' => 'required|numeric|min:0',
 
             // License/Permit details (optional)
-            'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number',
+            'license_number' => ['nullable', 'string', 'max:50', $this->uniquePermitRule()],
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
         ] + Student::PROFILE_RULES);
 
         $package = Package::where('is_active', true)->where('name', $validated['package'])->first();
         if (!$package) {
-            throw ValidationException::withMessages(['package' => 'Selecciona un paquete activo del catálogo.']);
+            throw ValidationException::withMessages(['package' => __('Selecciona un paquete activo del catálogo.')]);
         }
 
         try {
@@ -243,6 +245,7 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($id);
 
+        $this->normalizePermit($request);
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01|max:' . $student->debt_amount,
         ]);
@@ -256,7 +259,7 @@ class StudentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'El monto del abono no puede ser mayor a la deuda pendiente.'
+                    'message' => __('El monto del abono no puede ser mayor a la deuda pendiente.')
                 ], 422);
             }
 
@@ -322,7 +325,7 @@ class StudentController extends Controller
             'paid_amount' => 'required|numeric|min:0',
 
             // License/Permit details (optional)
-            'license_number' => 'nullable|string|max:50|unique:student_licenses,license_number,' . ($student->activeLicense ? $student->activeLicense->id : 'NULL'),
+            'license_number' => ['nullable', 'string', 'max:50', $this->uniquePermitRule($student->id)],
             'expiration_date' => 'nullable|required_with:license_number|date',
             'license_class' => 'nullable|required_with:license_number|string|max:10',
         ] + Student::PROFILE_RULES);
@@ -333,7 +336,7 @@ class StudentController extends Controller
         if ($validated['package'] !== $student->package) {
             $newPackage = Package::where('is_active', true)->where('name', $validated['package'])->first();
             if (!$newPackage) {
-                throw ValidationException::withMessages(['package' => 'Selecciona un paquete activo del catálogo.']);
+                throw ValidationException::withMessages(['package' => __('Selecciona un paquete activo del catálogo.')]);
             }
         }
 
@@ -388,6 +391,10 @@ class StudentController extends Controller
             // Update or create license
             $activeLicense = $student->activeLicense;
             if (!empty($validated['license_number'])) {
+                // Old inactive rows of this same student with that number would clash with the unique index
+                $student->licenses()->where('license_number', $validated['license_number'])
+                    ->where('is_active', false)->delete();
+
                 $licPhotoVal = $request->input('license_photo');
                 $licPhotoBackVal = $request->input('license_photo_back');
                 
@@ -443,11 +450,8 @@ class StudentController extends Controller
                 if ($activeLicense) {
                     $this->deleteOldImage($activeLicense->license_photo_url);
                     $this->deleteOldImage($activeLicense->license_photo_back_url);
-                    $activeLicense->update([
-                        'is_active' => false,
-                        'license_photo_url' => null,
-                        'license_photo_back_url' => null,
-                    ]);
+                    // Removing the permit frees its number for other students
+                    $activeLicense->delete();
                     $activeLicense = null;
                 }
             }
@@ -480,7 +484,7 @@ class StudentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Estudiante eliminado con éxito.'
+                'message' => __('Estudiante eliminado con éxito.')
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -512,7 +516,7 @@ class StudentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'El monto del abono no puede ser mayor a la deuda pendiente (' . $student->debt_amount . ' USD).'
+                    'message' => __('El monto del abono no puede ser mayor a la deuda pendiente (:amount USD).', ['amount' => $student->debt_amount])
                 ], 422);
             }
 
@@ -589,7 +593,7 @@ class StudentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'El estudiante ya tiene un paquete asignado. Para cambiarlo, edita su expediente.'
+                    'message' => __('El estudiante ya tiene un paquete asignado. Para cambiarlo, edita su expediente.')
                 ], 422);
             }
 
@@ -598,7 +602,7 @@ class StudentController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ese paquete no está activo.'
+                    'message' => __('Ese paquete no está activo.')
                 ], 422);
             }
 
@@ -670,6 +674,36 @@ class StudentController extends Controller
             'success' => true,
             'notes' => $student->notes()->with('user')->get()->map->toDashboardArray()->values(),
         ]);
+    }
+
+    /**
+     * Permit numbers are stored without spaces and in uppercase, so "ab 123" and "AB123" are the same permit.
+     */
+    private function normalizePermit(Request $request): void
+    {
+        if ($request->has('license_number')) {
+            $permit = strtoupper(preg_replace('/\s+/', '', (string) $request->input('license_number')));
+            $request->merge(['license_number' => $permit === '' ? null : $permit]);
+        }
+    }
+
+    /**
+     * A permit number may be empty, but it can't belong to another student (deleted ones included).
+     */
+    private function uniquePermitRule(?int $studentId = null): \Closure
+    {
+        return function ($attribute, $value, $fail) use ($studentId) {
+            $owner = StudentLicense::where('license_number', $value)
+                ->when($studentId, fn ($q) => $q->where('student_id', '!=', $studentId))
+                ->first()?->student()->withTrashed()->first();
+
+            if ($owner) {
+                $replace = ['number' => $value, 'name' => trim($owner->first_name . ' ' . $owner->last_name)];
+                $fail($owner->trashed()
+                    ? __('El Permit Number :number ya está registrado para :name (estudiante eliminado).', $replace)
+                    : __('El Permit Number :number ya está registrado para :name.', $replace));
+            }
+        };
     }
 
     private function saveImage($base64, $subfolder, $prefix)

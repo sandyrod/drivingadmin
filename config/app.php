@@ -103,6 +103,15 @@ return [
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*
+    | Languages of the interface (switch in the header) and of the messages sent
+    | to students / instructors (each one has a preferred language).
+    | default_language is used until the user picks one, and for people without a preference.
+    */
+    'languages' => ['es' => 'Español', 'en' => 'English'],
+
+    'default_language' => env('APP_DEFAULT_LANGUAGE', 'es'),
+
+    /*
     |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------

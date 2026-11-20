@@ -19,6 +19,10 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
+// ---------- ES / EN language switch (also on the login page and "Mis clases") ----------
+Route::get('/language/{locale}', [\App\Http\Controllers\LanguageController::class, 'switch'])
+    ->whereIn('locale', ['es', 'en'])->name('language.switch');
+
 // ---------- Instructor "Mis clases" (personal link, no login) ----------
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/i/{token}', [InstructorPortalController::class, 'show'])->name('instructor.portal');

@@ -117,14 +117,14 @@
                 <button onclick="switchTab('{{ $item['id'] }}')" id="btn-{{ $item['id'] }}"
                     class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition {{ $item['id'] === 'dashboard' ? $activeClass : $inactiveClass }}">
                     <i class="{{ $item['icon'] }} text-lg"></i>
-                    <span>{{ $item['label'] }}</span>
+                    <span>{{ __($item['label']) }}</span>
                 </button>
             @else
                 <!-- Classic Laravel Route navigation -->
                 <a href="{{ $url }}" id="btn-{{ $item['id'] }}"
                     class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition {{ $currentClass }}">
                     <i class="{{ $item['icon'] }} text-lg"></i>
-                    <span>{{ $item['label'] }}</span>
+                    <span>{{ __($item['label']) }}</span>
                 </a>
             @endif
         @endforeach
@@ -147,7 +147,7 @@
                 <button type="submit"
                     class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-red-500 transition">
                     <i class="fa-solid fa-right-from-bracket text-lg"></i>
-                    <span>Cerrar sesión</span>
+                    <span>{{ __('Cerrar sesión') }}</span>
                 </button>
             </form>
         </div>
@@ -155,7 +155,7 @@
 
     <!-- Footer Information -->
     <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
-        <p>Demo Técnico - Fase 1</p>
-        <p class="text-amber-500/60 mt-1">Ecosistema Google Activo</p>
+        <p>{{ __('Demo Técnico - Fase 1') }}</p>
+        <p class="text-amber-500/60 mt-1">{{ __('Ecosistema Google Activo') }}</p>
     </div>
 </aside>

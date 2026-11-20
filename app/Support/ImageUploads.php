@@ -62,7 +62,7 @@ class ImageUploads
         }
 
         if (!in_array($folder, self::FOLDERS, true)) {
-            throw new InvalidArgumentException('Carpeta de imágenes no permitida.');
+            throw new InvalidArgumentException(__('Carpeta de imágenes no permitida.'));
         }
 
         if (!preg_match('/^data:image\/(\w+);base64,/', $value, $match)) {
@@ -71,22 +71,22 @@ class ImageUploads
 
         $ext = strtolower($match[1]);
         if (!in_array($ext, ['jpg', 'jpeg', 'gif', 'png', 'webp'], true)) {
-            throw new InvalidArgumentException('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.');
+            throw new InvalidArgumentException(__('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.'));
         }
 
         $data = base64_decode(substr($value, strpos($value, ',') + 1), true);
         if ($data === false || $data === '') {
-            throw new InvalidArgumentException('No se pudo leer la imagen.');
+            throw new InvalidArgumentException(__('No se pudo leer la imagen.'));
         }
 
         if (strlen($data) > self::MAX_BYTES) {
-            throw new InvalidArgumentException('La imagen supera el tamaño máximo permitido (8 MB).');
+            throw new InvalidArgumentException(__('La imagen supera el tamaño máximo permitido (8 MB).'));
         }
 
         // Make sure the content really is an image of an allowed type
         $info = @getimagesizefromstring($data);
         if ($info === false || !in_array($info['mime'], self::MIMES, true)) {
-            throw new InvalidArgumentException('El archivo enviado no es una imagen válida.');
+            throw new InvalidArgumentException(__('El archivo enviado no es una imagen válida.'));
         }
 
         $dir = self::root() . DIRECTORY_SEPARATOR . $folder;

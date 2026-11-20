@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Iniciar sesión - NY Driving School</title>
+    <title>{{ __('Iniciar sesión') }} - NY Driving School</title>
 
     @include('partials.theme-head')
 </head>
@@ -24,11 +24,14 @@
             </div>
         </div>
 
-        <button type="button" onclick="toggleTheme()" title="Cambiar tema claro / oscuro"
+        <div class="flex items-center gap-3">
+        @include('partials.language-toggle')
+        <button type="button" onclick="toggleTheme()" title="{{ __('Cambiar tema claro / oscuro') }}"
             class="theme-toggle w-9 h-9 rounded-lg border border-slate-800 bg-slate-800/40 text-slate-400 hover:text-amber-500 hover:border-amber-500/60 flex items-center justify-center transition">
             <i class="icon-moon fa-solid fa-moon"></i>
             <i class="icon-sun fa-solid fa-sun"></i>
         </button>
+        </div>
     </header>
 
     <main class="flex-1 flex items-center justify-center px-4 py-12">
@@ -37,8 +40,8 @@
                 <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl mb-5">
                     <i class="fa-solid fa-lock"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-100">Iniciar sesión</h2>
-                <p class="text-sm text-slate-400 mt-1 mb-6">Ingresa con tu cuenta para acceder al panel.</p>
+                <h2 class="text-xl font-bold text-slate-100">{{ __('Iniciar sesión') }}</h2>
+                <p class="text-sm text-slate-400 mt-1 mb-6">{{ __('Ingresa con tu cuenta para acceder al panel.') }}</p>
 
                 @if ($errors->any())
                     <div class="mb-5 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-500" role="alert">
@@ -51,23 +54,23 @@
                     @csrf
 
                     <div>
-                        <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Correo</label>
+                        <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">{{ __('Correo') }}</label>
                         <div class="relative">
                             <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
                             <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                                 class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
-                                placeholder="usuario@correo.com">
+                                placeholder="{{ __('usuario@correo.com') }}">
                         </div>
                     </div>
 
                     <div>
-                        <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Contraseña</label>
+                        <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">{{ __('Contraseña') }}</label>
                         <div class="relative">
                             <i class="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
                             <input id="password" name="password" type="password" required autocomplete="current-password"
                                 class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-10 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
                                 placeholder="••••••••">
-                            <button type="button" onclick="togglePassword()" title="Mostrar / ocultar contraseña"
+                            <button type="button" onclick="togglePassword()" title="{{ __('Mostrar / ocultar contraseña') }}"
                                 class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 text-slate-500 hover:text-amber-500 transition">
                                 <i id="password-eye" class="fa-solid fa-eye text-sm"></i>
                             </button>
@@ -77,13 +80,13 @@
                     <label class="flex items-center gap-2 text-sm text-slate-400 select-none cursor-pointer">
                         <input type="checkbox" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}
                             class="w-4 h-4 rounded border-slate-700 accent-amber-500">
-                        Mantener sesión iniciada
+                        {{ __('Mantener sesión iniciada') }}
                     </label>
 
                     <button type="submit"
                         class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-right-to-bracket"></i>
-                        Entrar
+                        {{ __('Entrar') }}
                     </button>
                 </form>
             </div>

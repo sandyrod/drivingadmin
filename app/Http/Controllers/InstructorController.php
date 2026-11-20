@@ -41,6 +41,7 @@ class InstructorController extends Controller
             // Instructor-specific details
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'transmission' => 'nullable|string|max:20',
+            'language' => 'nullable|in:es,en',
             'shift' => 'nullable|string|max:50',
             // Working schedule (optional: without it the instructor can be booked at any time)
             'work_days' => 'nullable|array|min:1',
@@ -79,6 +80,7 @@ class InstructorController extends Controller
                 'instructor_photo_url' => $instructor_photo_url,
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
+                'language' => $validated['language'] ?? config('app.default_language'),
                 'shift' => $validated['shift'] ?? null,
                 ...self::scheduleFields($validated),
                 'status' => 'Disponible',
@@ -125,9 +127,10 @@ class InstructorController extends Controller
                     'zip_code' => $instructor->zip_code,
                     'phone' => $instructor->phone,
                     'email' => $instructor->email,
-                    'vehicle' => $assignedVehicle ? $assignedVehicle->brand : 'Sin Asignar',
+                    'vehicle' => $assignedVehicle ? $assignedVehicle->brand : __('Sin Asignar'),
                     'plate' => $assignedVehicle ? $assignedVehicle->plate : '-',
                     'transmission' => $instructor->transmission ?? 'Automático',
+                    'language' => $instructor->language ?: config('app.default_language'),
                     ...$instructor->scheduleArray(),
                     'status' => $instructor->status,
                     'height' => $instructor->height,
@@ -185,6 +188,7 @@ class InstructorController extends Controller
             // Instructor-specific details
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'transmission' => 'nullable|string|max:20',
+            'language' => 'nullable|in:es,en',
             'shift' => 'nullable|string|max:50',
             // Working schedule (optional: without it the instructor can be booked at any time)
             'work_days' => 'nullable|array|min:1',
@@ -233,6 +237,7 @@ class InstructorController extends Controller
                 'instructor_photo_url' => $instructor_photo_url,
                 'vehicle_id' => $validated['vehicle_id'] ?? null,
                 'transmission' => $validated['transmission'] ?? null,
+                'language' => $validated['language'] ?? config('app.default_language'),
                 'shift' => $validated['shift'] ?? null,
                 ...self::scheduleFields($validated),
             ]);
@@ -327,10 +332,11 @@ class InstructorController extends Controller
                     'zip_code' => $instructor->zip_code,
                     'phone' => $instructor->phone,
                     'email' => $instructor->email,
-                    'vehicle' => $assignedVehicle ? $assignedVehicle->brand : 'Sin Asignar',
+                    'vehicle' => $assignedVehicle ? $assignedVehicle->brand : __('Sin Asignar'),
                     'plate' => $assignedVehicle ? $assignedVehicle->plate : '-',
                     'vehicle_id' => $instructor->vehicle_id,
                     'transmission' => $instructor->transmission ?? 'Automático',
+                    'language' => $instructor->language ?: config('app.default_language'),
                     ...$instructor->scheduleArray(),
                     'status' => $instructor->status,
                     'height' => $instructor->height,
@@ -369,7 +375,7 @@ class InstructorController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Instructor eliminado con éxito.'
+                'message' => __('Instructor eliminado con éxito.')
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -415,18 +421,18 @@ class InstructorController extends Controller
         $failed = null;
         if ($request->boolean('send')) {
             $route = Notification::route('mail', $instructor->email)->route('sms', $instructor->phone);
-            $notification = new InstructorPortalLink($instructor, $url);
+            $notification = (new InstructorPortalLink($instructor, $url))->locale($instructor->language ?: config('app.default_language'));
             $channels = $notification->via($route);
 
             if (!$channels) {
-                $failed = 'El instructor no tiene correo ni teléfono válido.';
+                $failed = __('El instructor no tiene correo ni teléfono válido.');
             } else {
                 try {
                     $route->notifyNow($notification);
-                    $sent = array_map(fn ($c) => $c === 'mail' ? 'correo' : 'SMS', $channels);
+                    $sent = array_map(fn ($c) => $c === 'mail' ? __('correo') : 'SMS', $channels);
                 } catch (\Throwable $e) {
                     Log::error('Error enviando enlace Mis clases: ' . $e->getMessage());
-                    $failed = 'No se pudo enviar el enlace. Revisa la configuración de correo/SMS.';
+                    $failed = __('No se pudo enviar el enlace. Revisa la configuración de correo/SMS.');
                 }
             }
         }
