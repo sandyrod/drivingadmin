@@ -234,7 +234,6 @@
     "E - Estatus Operación": "E - Estatus Operación",
     "E - Monto": "E - Monto",
     "E - Teléfono": "E - Teléfono",
-    "Ecosistema Google Activo": "Ecosistema Google Activo",
     "Editando \":name\".": "Editando \":name\".",
     "Editar": "Editar",
     "Editar Expediente de Instructor": "Editar Expediente de Instructor",
@@ -790,13 +789,10 @@
     "Esta clase está :status. Solo se pueden reprogramar clases que estén programadas.": "Esta clase está :status. Solo se pueden reprogramar clases que estén programadas.",
     "Este estudiante": "Este estudiante",
     "Guardar notas": "Guardar notas",
-    "Haz clic en un espacio libre para elegir el nuevo horario.": "Haz clic en un espacio libre para elegir el nuevo horario.",
     "No trabaja": "No trabaja",
     "Nuevo horario": "Nuevo horario",
     "Ocupado (estudiante)": "Ocupado (estudiante)",
-    "Ocupado (instructor)": "Ocupado (instructor)",
     "Pasado": "Pasado",
-    "Se mantiene el día y la hora actuales.": "Se mantiene el día y la hora actuales.",
     "Sin horas libres": "Sin horas libres",
     "Abrir el recibo al guardar": "Abrir el recibo al guardar",
     "El monto no puede superar el saldo pendiente.": "El monto no puede superar el saldo pendiente.",
@@ -814,5 +810,8 @@
     "Nota": "Nota",
     "Pago sobre saldo anterior :amount": "Pago sobre saldo anterior :amount",
     "Sin movimientos.": "Sin movimientos.",
-    "Totales": "Totales"
+    "Totales": "Totales",
+    "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.": "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.",
+    "Se mantiene el día, la hora y el instructor actuales.": "Se mantiene el día, la hora y el instructor actuales.",
+    "cambia de instructor": "cambia de instructor"
 }

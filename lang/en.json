@@ -234,7 +234,6 @@
     "E - Estatus Operación": "E - Operating Status",
     "E - Monto": "E - Amount",
     "E - Teléfono": "E - Phone",
-    "Ecosistema Google Activo": "Google Ecosystem Active",
     "Editando \":name\".": "Editing \":name\".",
     "Editar": "Edit",
     "Editar Expediente de Instructor": "Edit Instructor Record",
@@ -790,13 +789,10 @@
     "Esta clase está :status. Solo se pueden reprogramar clases que estén programadas.": "This lesson is :status. Only scheduled lessons can be rescheduled.",
     "Este estudiante": "This student",
     "Guardar notas": "Save Notes",
-    "Haz clic en un espacio libre para elegir el nuevo horario.": "Click a free slot to pick the new time.",
     "No trabaja": "Day off",
     "Nuevo horario": "New time",
     "Ocupado (estudiante)": "Busy (student)",
-    "Ocupado (instructor)": "Busy (instructor)",
     "Pasado": "Past",
-    "Se mantiene el día y la hora actuales.": "The current day and time are kept.",
     "Sin horas libres": "Fully booked",
     "Abrir el recibo al guardar": "Open the receipt after saving",
     "El monto no puede superar el saldo pendiente.": "The amount can't exceed the outstanding balance.",
@@ -814,5 +810,8 @@
     "Nota": "Note",
     "Pago sobre saldo anterior :amount": "Payment on previous balance :amount",
     "Sin movimientos.": "No transactions.",
-    "Totales": "Totals"
+    "Totales": "Totals",
+    "Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.": "Click a free slot of any instructor to change the day, time or instructor.",
+    "Se mantiene el día, la hora y el instructor actuales.": "The current day, time and instructor are kept.",
+    "cambia de instructor": "instructor changes"
 }
