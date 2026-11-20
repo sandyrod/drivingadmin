@@ -309,8 +309,34 @@
 
             renderStudentNotes(notes);
 
-            // Lessons tab
-            document.getElementById('sf-tab-lessons').innerHTML = ownLessons.length ? `
+            // Lessons tab: lessons left in the packages (to book) + booked lessons
+            // Numbering (#1, #2...): driving lessons that use the package, by date; a double lesson takes two numbers
+            const lessonNo = {};
+            let nextNo = 1;
+            ownLessons.filter(l => !isRoadTest(l) && l.status !== 'cancelled').slice().sort(byStart).forEach(l => {
+                const units = Math.max(1, Math.ceil(l.duration_minutes / LESSON_MINUTES));
+                lessonNo[l.db_id] = units > 1 ? `#${nextNo}–${nextNo + units - 1}` : `#${nextNo}`;
+                nextNo += units;
+            });
+            const pending = has ? studentPendingLessons(student).map((p, i) => ({ ...p, no: nextNo + i })) : [];
+            document.getElementById('sf-lessons-count').textContent = count(ownLessons.length + pending.length);
+            const pendingHtml = pending.length ? `
+                <div class="mb-5">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">${__('Por agendar (:n)', { n: pending.length })}</h4>
+                    <div class="grid sm:grid-cols-2 gap-2">
+                        ${pending.map(p => `
+                            <button type="button" onclick="openLessonBooker(${student.db_id})"
+                                class="flex items-center gap-3 text-left rounded-xl border border-dashed border-sky-500/40 bg-sky-500/5 hover:bg-sky-500/15 px-3 py-2 transition">
+                                <i class="fa-solid fa-calendar-plus text-sky-400"></i>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-sm font-semibold text-slate-100">${__('Clase #:n', { n: p.no })}${p.minutes < LESSON_MINUTES ? ` <span class="text-xs text-slate-400">(${p.minutes} min)</span>` : ''}</span>
+                                    <span class="block text-[11px] text-slate-500 truncate">${esc(p.package)} · ${__(':i de :n', { i: p.index, n: p.of })}</span>
+                                </span>
+                                <span class="text-xs font-bold text-sky-400 whitespace-nowrap">${__('Agendar')}</span>
+                            </button>`).join('')}
+                    </div>
+                </div>` : '';
+            document.getElementById('sf-tab-lessons').innerHTML = pendingHtml + (ownLessons.length ? `
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
@@ -324,7 +350,7 @@
                                     <td class="py-2 pr-3 font-mono text-slate-400 whitespace-nowrap">${esc(l.time)}–${esc(l.end_time)}</td>
                                     <td class="py-2 pr-3 whitespace-nowrap">${isRoadTest(l)
                                         ? '<span class="bg-violet-600 text-white text-[10px] font-black px-2 py-0.5 rounded">ROAD TEST</span>'
-                                        : `<span class="text-xs text-slate-400">${esc(lessonsText(l.duration_minutes))}</span>`}</td>
+                                        : `${lessonNo[l.db_id] ? `<span class="bg-sky-600/20 text-sky-300 text-[10px] font-black px-2 py-0.5 rounded mr-1.5">${__('Clase')} ${lessonNo[l.db_id]}</span>` : ''}<span class="text-xs text-slate-400">${esc(lessonsText(l.duration_minutes))}</span>`}</td>
                                     <td class="py-2 pr-3 text-slate-300">${esc(l.instructor_name)}</td>
                                     <td class="py-2 pr-3 text-xs text-slate-500">${esc(l.vehicle || '—')}</td>
                                     <td class="py-2 pr-3">${statusBadge(l)}</td>
@@ -335,7 +361,7 @@
                                 </tr>`).join('')}
                         </tbody>
                     </table>
-                </div>` : `<p class="text-sm text-slate-500 text-center py-8">${__('El estudiante no tiene clases agendadas.')}</p>`;
+                </div>` : `<p class="text-sm text-slate-500 text-center py-8">${__('El estudiante no tiene clases agendadas.')}</p>`);
 
             renderStudentLedger(has ? student : null, ownPayments);
 
@@ -671,6 +697,40 @@
 
         function studentRemainingMinutes(s) {
             return Math.max(0, (s.package_lessons || 0) * LESSON_MINUTES - (s.used_minutes || 0));
+        }
+
+        // Lessons not booked yet, one entry per lesson, labeled with the package it comes from.
+        // Booked time is taken from the oldest package first, so what is left belongs to the newest ones.
+        function studentPendingLessons(s) {
+            const charges = s.charges || [];
+            const extraLessons = charges.reduce((sum, c) => sum + c.lessons, 0);
+            const packs = [
+                { name: s.plan || __('Paquete'), lessons: Math.max(0, (s.package_lessons || 0) - extraLessons) },
+                ...charges.map(c => ({ name: c.description, lessons: c.lessons })),
+            ].filter(p => p.lessons > 0);
+
+            let left = studentRemainingMinutes(s);
+            const perPack = [];
+            for (let i = packs.length - 1; i >= 0 && left > 0; i--) {
+                const take = Math.min(left, packs[i].lessons * LESSON_MINUTES);
+                perPack[i] = take;
+                left -= take;
+            }
+
+            const out = [];
+            packs.forEach((p, i) => {
+                let min = perPack[i] || 0;
+                if (!min) return;
+                // Lessons of this package already used: numbering continues after them
+                const usedLessons = p.lessons - Math.ceil(min / LESSON_MINUTES);
+                let n = usedLessons;
+                while (min > 0) {
+                    n++;
+                    out.push({ package: p.name, index: n, of: p.lessons, minutes: Math.min(LESSON_MINUTES, min) });
+                    min -= LESSON_MINUTES;
+                }
+            });
+            return out;
         }
 
         function initAgenda() {

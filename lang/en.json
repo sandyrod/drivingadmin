@@ -826,5 +826,13 @@
     "Abono sobre el saldo pendiente": "Payment on the outstanding balance",
     "Paquete adicional con su factura": "Additional package with its invoice",
     "Paquete de inscripción": "Enrollment package",
-    "Saldo de la cuenta:": "Account balance:"
+    "Saldo de la cuenta:": "Account balance:",
+    "Por agendar (:n)": "To schedule (:n)",
+    "Clase :i de :n": "Lesson :i of :n",
+    "Agendar": "Schedule",
+    "Clases por agendar del paquete: :left": "Package lessons left to schedule: :left",
+    "Haz clic en un espacio libre para elegir día, hora e instructor.": "Click a free slot to choose the day, time and instructor.",
+    "Horario": "Time",
+    "Clase #:n": "Lesson #:n",
+    ":i de :n": ":i of :n"
 }

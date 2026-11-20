@@ -826,5 +826,13 @@
     "Abono sobre el saldo pendiente": "Abono sobre el saldo pendiente",
     "Paquete adicional con su factura": "Paquete adicional con su factura",
     "Paquete de inscripción": "Paquete de inscripción",
-    "Saldo de la cuenta:": "Saldo de la cuenta:"
+    "Saldo de la cuenta:": "Saldo de la cuenta:",
+    "Por agendar (:n)": "Por agendar (:n)",
+    "Clase :i de :n": "Clase :i de :n",
+    "Agendar": "Agendar",
+    "Clases por agendar del paquete: :left": "Clases por agendar del paquete: :left",
+    "Haz clic en un espacio libre para elegir día, hora e instructor.": "Haz clic en un espacio libre para elegir día, hora e instructor.",
+    "Horario": "Horario",
+    "Clase #:n": "Clase #:n",
+    ":i de :n": ":i de :n"
 }

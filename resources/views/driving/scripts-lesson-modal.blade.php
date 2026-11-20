@@ -5,12 +5,43 @@
         const LEM_SLOT_MIN = 15;     // start times every 15 minutes
         const LEM_SLOT_PX = 22;      // height of one step
 
-        let lem = null;   // { lessonId, minutes, view: 'day'|'week', date, pick: { insId, date, start } | null }
+        // { lessonId, draft, minutes, view: 'day'|'week', date, pick: { insId, date, start } | null }
+        // draft = a lesson not saved yet (booking a lesson left in the package): lessonId is 0
+        let lem = null;
         let lemSavedView = 'day';   // last view used (Day / Week)
         try { if (localStorage.getItem('nyds-lem-view') === 'week') lemSavedView = 'week'; } catch (e) {}
 
         function lemLesson() {
-            return lem ? lessons.find(l => l.db_id === lem.lessonId) : null;
+            if (!lem) return null;
+            return lem.draft || lessons.find(l => l.db_id === lem.lessonId);
+        }
+
+        // Book one of the lessons left in the student's package (Lessons tab → "Por agendar")
+        function openLessonBooker(studentDbId) {
+            const student = students.find(s => s.db_id === Number(studentDbId));
+            if (!student) return;
+            const remaining = studentRemainingMinutes(student);
+            const minutes = LESSON_DURATIONS.find(v => v === LESSON_MINUTES && v <= remaining)
+                || LESSON_DURATIONS.filter(v => v <= remaining).pop();
+            if (!minutes) return showToast(__('El estudiante ya usó todas las clases de su paquete.'), 'warning');
+
+            const today = todayLocal();
+            lem = {
+                lessonId: 0,
+                draft: {
+                    db_id: 0, student_id: student.db_id, student_name: student.name, type: 'lesson', status: 'scheduled',
+                    duration_minutes: minutes, instructor_id: student.preferred_instructor_id || 0,
+                    date: today, time: '', end_time: '', notes: '', location: '',
+                },
+                minutes,
+                view: lemSavedView,
+                date: today,
+                pick: null,
+            };
+            document.getElementById('lesson-modal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            renderLessonEditor();
+            lemScrollToFocus();
         }
 
         function lemWeekStart(ymd) {
@@ -70,8 +101,9 @@
         function lemDurations(l) {
             if (isRoadTest(l)) return ROAD_TEST_DURATIONS.map(v => ({ v, ok: true }));
             const student = students.find(s => s.db_id === l.student_id);
-            const fits = (student ? studentRemainingMinutes(student) : 0) + l.duration_minutes;
-            return LESSON_DURATIONS.map(v => ({ v, ok: v <= fits || v === l.duration_minutes }));
+            const own = l.db_id ? l.duration_minutes : 0;   // a new lesson has no time to give back
+            const fits = (student ? studentRemainingMinutes(student) : 0) + own;
+            return LESSON_DURATIONS.map(v => ({ v, ok: v <= fits || v === own }));
         }
 
         // Active lessons of that day, without the one being edited
@@ -184,9 +216,11 @@
         }
 
         function lemPickText(l) {
-            if (!lem.pick) return __('Se mantiene el día, la hora y el instructor actuales.');
+            if (!lem.pick) return l.db_id
+                ? __('Se mantiene el día, la hora y el instructor actuales.')
+                : __('Haz clic en un espacio libre para elegir día, hora e instructor.');
             const ins = instructors.find(i => i.db_id === lem.pick.insId);
-            return `<i class="fa-solid fa-calendar-check"></i> ${__('Nuevo horario')}: ${calDayText(lem.pick.date)} · ${calTime12(lem.pick.start)} – ${calTime12(lem.pick.start + lem.minutes)} · ${esc(ins ? ins.name : '')}${ins && ins.db_id !== l.instructor_id ? ` <span class="text-amber-400">(${__('cambia de instructor')})</span>` : ''}`;
+            return `<i class="fa-solid fa-calendar-check"></i> ${l.db_id ? __('Nuevo horario') : __('Horario')}: ${calDayText(lem.pick.date)} · ${calTime12(lem.pick.start)} – ${calTime12(lem.pick.start + lem.minutes)} · ${esc(ins ? ins.name : '')}${l.db_id && ins && ins.db_id !== l.instructor_id ? ` <span class="text-amber-400">(${__('cambia de instructor')})</span>` : ''}`;
         }
 
         function renderLessonEditor() {
@@ -197,12 +231,23 @@
             const scheduled = l.status === 'scheduled';
             const statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${(LESSON_STATUS[l.status] || {}).cls || ''}">${esc(lessonStatusLabel(l.status))}</span>`;
 
-            document.getElementById('lem-title').innerHTML = `
-                <i class="fa-solid ${roadTest ? 'fa-flag-checkered text-violet-400' : 'fa-pen-to-square text-amber-500'}"></i>
-                <span class="truncate">${roadTest ? __('Reprogramar Road Test') : __('Reprogramar Clase')} · ${esc(l.student_name)}</span> ${statusBadge}`;
-            document.getElementById('lem-subtitle').textContent = __('Actualmente: :day :from – :to con :instructor', {
-                day: calDayText(l.date), from: calTime12(calMin(l.time)), to: calTime12(calMin(l.end_time) || 24 * 60), instructor: l.instructor_name,
-            }) + (l.vehicle ? ` · ${l.vehicle}` : '');
+            const isNew = !l.db_id;
+            if (isNew) {
+                const student = students.find(s => s.db_id === l.student_id);
+                document.getElementById('lem-title').innerHTML = `
+                    <i class="fa-solid fa-calendar-plus text-emerald-500"></i>
+                    <span class="truncate">${__('Agendar Clase de Manejo')} · ${esc(l.student_name)}</span>`;
+                document.getElementById('lem-subtitle').textContent = __('Clases por agendar del paquete: :left', {
+                    left: lessonsText(student ? studentRemainingMinutes(student) : 0),
+                });
+            } else {
+                document.getElementById('lem-title').innerHTML = `
+                    <i class="fa-solid ${roadTest ? 'fa-flag-checkered text-violet-400' : 'fa-pen-to-square text-amber-500'}"></i>
+                    <span class="truncate">${roadTest ? __('Reprogramar Road Test') : __('Reprogramar Clase')} · ${esc(l.student_name)}</span> ${statusBadge}`;
+                document.getElementById('lem-subtitle').textContent = __('Actualmente: :day :from – :to con :instructor', {
+                    day: calDayText(l.date), from: calTime12(calMin(l.time)), to: calTime12(calMin(l.end_time) || 24 * 60), instructor: l.instructor_name,
+                }) + (l.vehicle ? ` · ${l.vehicle}` : '');
+            }
 
             const body = document.getElementById('lem-body');
             const footer = document.getElementById('lem-footer');
@@ -262,7 +307,9 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 pb-2 text-[11px] text-slate-400">
-                    <span><i class="fa-solid fa-hand-pointer text-amber-500"></i> ${__('Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.')}</span>
+                    <span><i class="fa-solid fa-hand-pointer text-amber-500"></i> ${isNew
+                        ? __('Haz clic en un espacio libre para elegir día, hora e instructor.')
+                        : __('Haz clic en un espacio libre de cualquier instructor para cambiar el día, la hora o el instructor.')}</span>
                     <span class="ml-auto flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded border border-slate-700 bg-slate-900"></span> ${__('Disponible')}</span>
                     <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded border border-slate-700 lem-off"></span> ${__('Bloqueado / fuera de horario')}</span>
                     <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-amber-500/25 border border-amber-500/50"></span> ${__('Ocupado (estudiante)')}</span>
@@ -277,6 +324,15 @@
             document.getElementById('lem-label').textContent = lem.view === 'day'
                 ? `${CAL_DAY_NAMES[first.getDay()]} ${first.getDate()} ${CAL_MONTHS[first.getMonth()]} ${first.getFullYear()}`
                 : `${first.getDate()} ${first.getMonth() !== last.getMonth() ? CAL_MONTHS[first.getMonth()] + ' ' : ''}– ${last.getDate()} ${CAL_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+
+            if (isNew) {
+                footer.innerHTML = `
+                    <p class="ml-auto text-xs ${lem.pick ? 'text-emerald-400 font-bold' : 'text-slate-500'}">${lemPickText(l)}</p>
+                    <button type="button" onclick="closeLessonEditor()" class="${btn} bg-slate-800 text-slate-200 hover:bg-slate-700">${__('Cerrar')}</button>
+                    <button type="button" id="lem-save" onclick="saveLessonEditor()" ${lem.pick ? '' : 'disabled'} class="${btn} bg-emerald-500 text-slate-950 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-calendar-check"></i> ${__('Agendar clase')}</button>`;
+                return;
+            }
 
             const changed = lem.pick || lem.minutes !== l.duration_minutes;
             footer.innerHTML = `
@@ -399,7 +455,7 @@
                     });
 
                     // Current position of the edited lesson
-                    if (d === l.date && i.db_id === l.instructor_id) {
+                    if (l.db_id && d === l.date && i.db_id === l.instructor_id) {
                         const s = calMin(l.time), e = calMin(l.end_time) || 24 * 60;
                         layers += `<div ${!lem.pick ? 'data-lem-focus' : ''} class="absolute left-0.5 right-0.5 z-[6] rounded-md border-2 border-dashed border-slate-400 bg-slate-500/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300 pointer-events-none overflow-hidden"
                             style="top:${px(s) + 1}px; height:${Math.max(LEM_SLOT_PX, px(e) - px(s)) - 2}px">${__('Actual')} · ${calTime12(s)}</div>`;
@@ -444,6 +500,7 @@
         function saveLessonEditor() {
             const l = lemLesson();
             if (!l) return;
+            if (!l.db_id) return saveNewLesson(l);
             const insId = lem.pick ? lem.pick.insId : l.instructor_id;
             const date = lem.pick ? lem.pick.date : l.date;
             const start = lem.pick ? lem.pick.start : calMin(l.time);
@@ -472,6 +529,37 @@
                 showToast(isRoadTest(res.lesson)
                     ? __('Road Test reprogramado(a): :student con :instructor, :date :time.', vars)
                     : __('Clase reprogramado(a): :student con :instructor, :date :time.', vars), 'success');
+                showLessonNotifications(res.notifications);
+                closeLessonEditor();
+                lemRefreshPages(res);
+            }).catch(err => {
+                showToast(err.message, 'warning');
+                saveBtn.disabled = false;
+            });
+        }
+
+        // Book a lesson left in the package at the picked slot
+        function saveNewLesson(l) {
+            if (!lem.pick) return showToast(__('Haz clic en un espacio libre para elegir día, hora e instructor.'), 'warning');
+            const problem = lemProblem(lem.pick.insId, lem.pick.date, lem.pick.start);
+            if (problem) return showToast(problem, 'warning');
+
+            const saveBtn = document.getElementById('lem-save');
+            saveBtn.disabled = true;
+            apiRequest('{{ url('lessons') }}', 'POST', {
+                student_id: l.student_id,
+                type: 'lesson',
+                instructor_id: lem.pick.insId,
+                date: lem.pick.date,
+                time: calHhmm(lem.pick.start),
+                duration_minutes: lem.minutes,
+                notes: document.getElementById('lem-notes').value.trim() || null,
+            }).then(res => {
+                lessons.push(res.lesson);
+                lessons.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+                const vars = { student: res.lesson.student_name, instructor: res.lesson.instructor_name, date: res.lesson.date, time: res.lesson.time };
+                showToast(__('Clase agendado(a): :student con :instructor, :date :time.', vars), 'success');
                 showLessonNotifications(res.notifications);
                 closeLessonEditor();
                 lemRefreshPages(res);
